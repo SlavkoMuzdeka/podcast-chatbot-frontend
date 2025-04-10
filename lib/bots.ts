@@ -95,6 +95,14 @@ export const bots: Bot[] = [
     icon: User2,
     systemPrompt: defaultSystemPrompt,
   },
+  {
+    id: "on_the_brink",
+    name: "On the Brink",
+    description: "AI assistant",
+    namespace: "on_the_brink",
+    icon: User2,
+    systemPrompt: defaultSystemPrompt,
+  },
 ];
 
 /**

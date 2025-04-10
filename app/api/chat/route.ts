@@ -64,7 +64,7 @@ export async function POST(req: Request) {
         bot.namespace
       );
 
-      // console.log("Namespace:", bot.namespace, "result is:", pineconeResults);
+      //console.log("Namespace:", bot.namespace, "result is:", pineconeResults);
 
       // Extract context from Pinecone results
       if (pineconeResults && pineconeResults.length > 0) {
