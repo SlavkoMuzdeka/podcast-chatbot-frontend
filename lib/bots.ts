@@ -103,6 +103,14 @@ export const bots: Bot[] = [
     icon: User2,
     systemPrompt: defaultSystemPrompt,
   },
+  {
+    id: "bell_curve",
+    name: "Bell Curve",
+    description: "AI assistant",
+    namespace: "bell_curve",
+    icon: User2,
+    systemPrompt: defaultSystemPrompt,
+  },
 ];
 
 /**
