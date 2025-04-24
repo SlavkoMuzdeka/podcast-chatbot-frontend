@@ -1,15 +1,14 @@
 "use client";
 
 import type React from "react";
-
-import { cn } from "@/lib/utils";
-import { Input } from "./ui/input";
-import { Send, User, AlertCircle } from "lucide-react";
 import { Button } from "./ui/button";
 import { getBotById } from "@/lib/bots";
-import { useRef, useEffect, useState } from "react";
+import { Send, User } from "lucide-react";
 import { ScrollArea } from "./ui/scroll-area";
+import { MessageBubble } from "./ui/message-bubble";
+import { useState, useRef, useEffect } from "react";
 import { Avatar, AvatarFallback } from "./ui/avatar";
+import { AutoResizeTextarea } from "./ui/auto-resize-textarea";
 import {
   Card,
   CardContent,
@@ -17,10 +16,6 @@ import {
   CardHeader,
   CardTitle,
 } from "./ui/card";
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
-import rehypeSanitize from "rehype-sanitize";
-import rehypeHighlight from "rehype-highlight";
 
 interface ChatProps {
   selectedBots: string[];
@@ -30,12 +25,12 @@ interface ChatProps {
  * @description Interface for chat messages with support for multiple bots
  */
 interface MultiBotMessage {
-  id: string; // Unique identifier for the message
-  role: "user" | "assistant"; // Role of the message sender
-  content: string; // Message content
-  botId?: string; // ID of the bot that sent the message (for assistant messages)
-  pending?: boolean; // Whether the message is pending (waiting for response)
-  error?: boolean; // Whether there was an error generating the message
+  id: string;
+  role: "user" | "assistant";
+  content: string;
+  botId?: string;
+  pending?: boolean;
+  error?: boolean;
 }
 
 /**
@@ -95,7 +90,7 @@ export function Chat({ selectedBots }: ChatProps) {
 
       // Request responses from all selected bots in parallel
       const botResponses = await Promise.all(
-        selectedBots.map(async (botId, index) => {
+        selectedBots.map(async (botId) => {
           try {
             // Send the request to the API
             const response = await fetch("/api/chat", {
@@ -252,136 +247,9 @@ export function Chat({ selectedBots }: ChatProps) {
           <div className="flex flex-col gap-6 p-4">
             {messageGroups.map((group, groupIndex) => (
               <div key={`group-${groupIndex}`} className="flex flex-col gap-3">
-                {group.map((message) => {
-                  const bot = message.botId ? getBotById(message.botId) : null;
-
-                  return (
-                    <div
-                      key={message.id}
-                      className={cn(
-                        "flex flex-col gap-2",
-                        message.role === "user" ? "items-end" : "items-start"
-                      )}
-                    >
-                      {/* Bot label for multi-bot responses */}
-                      {message.role === "assistant" && (
-                        <div className="flex items-center gap-1 ml-2 text-xs text-muted-foreground">
-                          <Avatar className="h-5 w-5">
-                            <AvatarFallback className="text-[10px]">
-                              {bot ? (
-                                <bot.icon />
-                              ) : (
-                                <User className="h-3 w-3" />
-                              )}
-                            </AvatarFallback>
-                          </Avatar>
-                          <span>{bot?.name || "AI Assistant"}</span>
-                        </div>
-                      )}
-
-                      {/* Message bubble */}
-                      <div
-                        className={cn(
-                          "flex w-max max-w-[90%] flex-col gap-2 rounded-lg px-3 py-2 text-sm",
-                          message.role === "user"
-                            ? "bg-primary text-primary-foreground"
-                            : message.error
-                            ? "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400"
-                            : "bg-muted text-foreground"
-                        )}
-                      >
-                        {message.pending ? (
-                          // Loading indicator for pending messages
-                          <div className="flex gap-1">
-                            <div className="h-2 w-2 animate-bounce rounded-full bg-foreground/50"></div>
-                            <div className="h-2 w-2 animate-bounce rounded-full bg-foreground/50 [animation-delay:0.2s]"></div>
-                            <div className="h-2 w-2 animate-bounce rounded-full bg-foreground/50 [animation-delay:0.4s]"></div>
-                          </div>
-                        ) : message.error ? (
-                          // Error message display
-                          <div className="flex items-center gap-2">
-                            <AlertCircle className="h-4 w-4" />
-                            <span>{message.content}</span>
-                          </div>
-                        ) : (
-                          // Regular message content with markdown rendering
-                          <div
-                            className={cn(
-                              "prose prose-sm max-w-none",
-                              message.role === "user"
-                                ? "prose-invert"
-                                : "dark:prose-invert"
-                            )}
-                          >
-                            <ReactMarkdown
-                              remarkPlugins={[remarkGfm]}
-                              rehypePlugins={[rehypeSanitize, rehypeHighlight]}
-                              components={{
-                                // Custom components for markdown rendering
-                                p: ({ children }) => (
-                                  <p className="mb-2 last:mb-0">{children}</p>
-                                ),
-                                a: ({ href, children }) => (
-                                  <a
-                                    href={href}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className={
-                                      message.role === "user"
-                                        ? "text-primary-foreground underline"
-                                        : "text-primary underline"
-                                    }
-                                  >
-                                    {children}
-                                  </a>
-                                ),
-                                pre: ({ children }) => (
-                                  <pre className="bg-muted-foreground/10 p-2 rounded-md overflow-auto text-xs my-2">
-                                    {children}
-                                  </pre>
-                                ),
-                                code: ({
-                                  node,
-                                  inline,
-                                  className,
-                                  children,
-                                  ...props
-                                }) => {
-                                  if (inline) {
-                                    return (
-                                      <code
-                                        className={cn(
-                                          "bg-muted-foreground/20 px-1 py-0.5 rounded text-xs",
-                                          message.role === "user"
-                                            ? "bg-primary-foreground/20"
-                                            : "",
-                                          className
-                                        )}
-                                        {...props}
-                                      >
-                                        {children}
-                                      </code>
-                                    );
-                                  }
-                                  return (
-                                    <code className={cn(className)} {...props}>
-                                      {children}
-                                    </code>
-                                  );
-                                },
-                              }}
-                            >
-                              {/* Ensure content is a string before passing to ReactMarkdown */}
-                              {typeof message.content === "string"
-                                ? message.content
-                                : "Error: Invalid content"}
-                            </ReactMarkdown>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  );
-                })}
+                {group.map((message) => (
+                  <MessageBubble key={message.id} message={message} />
+                ))}
               </div>
             ))}
 
@@ -406,20 +274,32 @@ export function Chat({ selectedBots }: ChatProps) {
           onSubmit={handleSubmit}
           className="flex w-full items-center gap-2"
         >
-          <Input
-            placeholder="Type your message..."
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            className="flex-1"
-          />
-          <Button
-            type="submit"
-            size="icon"
-            disabled={isLoading || !input.trim()}
-          >
-            <Send className="h-4 w-4" />
-            <span className="sr-only">Send</span>
-          </Button>
+          <div className="relative flex-1">
+            <AutoResizeTextarea
+              placeholder="Type your message..."
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              maxRows={8}
+              className="w-full rounded-2xl border bg-background px-4 py-3 pr-12 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.shiftKey) {
+                  e.preventDefault();
+                  if (input.trim() && !isLoading) {
+                    handleSubmit(e);
+                  }
+                }
+              }}
+            />
+            <Button
+              type="submit"
+              size="icon"
+              className="absolute right-2 top-1/2 h-8 w-8 -translate-y-1/2 rounded-full"
+              disabled={isLoading || !input.trim()}
+            >
+              <Send className="h-4 w-4" />
+              <span className="sr-only">Send</span>
+            </Button>
+          </div>
         </form>
       </CardFooter>
     </Card>

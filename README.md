@@ -2,7 +2,7 @@
 
 A `Next.js` application that uses `Retrieval Augmented Generation (RAG)` with `Pinecone` vector database to create `AI chatbots` with domain-specific knowledge. This application allows you to chat with multiple `AI` personas that have access to specialized knowledge stored in `Pinecone`.
 
-![Pinecone RAG Chatbot](/images/chatbot_app.png?height=400&width=800)
+![Pinecone RAG Chatbot](/public/chatbot_app.png?height=400&width=800)
 
 ## Features
 

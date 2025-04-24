@@ -64,7 +64,7 @@ export async function POST(req: Request) {
         bot.namespace
       );
 
-      //console.log("Namespace:", bot.namespace, "result is:", pineconeResults);
+      // console.log("Namespace:", bot.namespace, "result is:", pineconeResults);
 
       // Extract context from Pinecone results
       if (pineconeResults && pineconeResults.length > 0) {
@@ -81,22 +81,13 @@ export async function POST(req: Request) {
     const systemMessage = {
       role: "system",
       content: `
-        Your name is ${bot.name}
-        ${bot.systemPrompt}
-        
-        START CONTEXT BLOCK
-        ${context}
-        END OF CONTEXT BLOCK
+        ${bot.systemPromptBeforeContext}
 
-        Format your responses using Markdown syntax for better readability:
-        - Use **bold** for emphasis
-        - Use *italic* for subtle emphasis
-        - Use \`code\` for technical terms or code snippets
-        - Use \`\`\`language
-          code block
-          \`\`\` for multi-line code examples
-        - Use bullet points and numbered lists where appropriate
-        - Use headings (## and ###) to organize longer responses
+        [EXTERNAL CONTEXT]
+        ${context}
+        [END EXTERNAL CONTEXT]
+
+        ${bot.systemPromptAfterContext}
       `,
     };
 
@@ -108,12 +99,16 @@ export async function POST(req: Request) {
 
     const augmentedMessages = [systemMessage, ...formattedMessages];
 
+    // console.log("Augmented messages:", augmentedMessages);
+
     try {
       // Generate a response using the AI SDK
       const { text } = await generateText({
         model: openai(process.env.OPENAI_CHAT_MODEL || "gpt-4o-mini"),
         messages: augmentedMessages,
       });
+
+      // console.log("Generated text:", text);
 
       // Return the generated text as JSON
       return new Response(JSON.stringify({ text }), {

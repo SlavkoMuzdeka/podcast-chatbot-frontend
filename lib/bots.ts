@@ -10,37 +10,14 @@ export type Bot = {
   description: string; // Short description
   namespace: string; // Pinecone namespace to query for this bot
   icon: React.ComponentType; // Icon component to display
-  systemPrompt: string; // System prompt to guide the AI's behavior
+  systemPromptBeforeContext: string; // System prompt before the context
+  systemPromptAfterContext: string; // System prompt after the context
 };
 
-/**
- * @description Default system prompt used as a base for all bots
- * @description Instructs the AI on how to respond and what tone to use
- */
-export const defaultSystemPrompt: string = `
-  # AUTHENTIC THOUGHT SURROGATE
-
-  You are a thought surrogate for [INDIVIDUAL NAME], trained exclusively on their public content. When answering questions about economics, technology, innovation, or blockchain, embody their distinct perspective, reasoning patterns, and communication style.
-
-  ## RESPONSE APPROACH
-
-  1. **High-Conviction Clarity**: Lead with testable assertions, not qualifications. Express ideas with the individual's characteristic confidence and directness.
-
-  2. **Bounded Expertise**: Draw only from the individual's established viewpoints in the CONTEXT BLOCK. Do not invent positions they haven't taken.
-
-  3. **Insight-Action Framework**:
-    - THESIS: One clear, falsifiable statement
-    - RATIONALE: Brief supporting logic using their mental models
-    - IMPLICATION: Actionable takeaway for relevant stakeholders
-
-  ## FORMAT EXAMPLE
-
-  "THESIS: [Single, testable statement]
-
-  RATIONALE: [1-3 sentences explaining the logic using their frameworks]
-
-  IMPLICATION: [Concrete action or observation for investors/builders/observers]"
-`;
+export const promptBeforeContext: string =
+  process.env.SYSTEM_PROMPT_BEFORE_CONTEXT!;
+export const promptAfterContext: string =
+  process.env.SYSTEM_PROMPT_AFTER_CONTEXT!;
 
 /**
  * @description Array of bot configurations.
@@ -53,7 +30,8 @@ export const bots: Bot[] = [
     description: "AI assistant",
     namespace: "empire",
     icon: User2,
-    systemPrompt: defaultSystemPrompt,
+    systemPromptBeforeContext: promptBeforeContext,
+    systemPromptAfterContext: promptAfterContext,
   },
   {
     id: "jim_bianco",
@@ -61,7 +39,8 @@ export const bots: Bot[] = [
     description: "AI assistant",
     namespace: "jim_bianco",
     icon: User2,
-    systemPrompt: defaultSystemPrompt,
+    systemPromptBeforeContext: promptBeforeContext,
+    systemPromptAfterContext: promptAfterContext,
   },
   {
     id: "chopping_block",
@@ -69,7 +48,8 @@ export const bots: Bot[] = [
     description: "AI assistant",
     namespace: "chopping_block",
     icon: User2,
-    systemPrompt: defaultSystemPrompt,
+    systemPromptBeforeContext: promptBeforeContext,
+    systemPromptAfterContext: promptAfterContext,
   },
   {
     id: "matt_houdan",
@@ -77,7 +57,8 @@ export const bots: Bot[] = [
     description: "AI assistant",
     namespace: "matt_houdan",
     icon: User2,
-    systemPrompt: defaultSystemPrompt,
+    systemPromptBeforeContext: promptBeforeContext,
+    systemPromptAfterContext: promptAfterContext,
   },
   {
     id: "hivemind",
@@ -85,7 +66,8 @@ export const bots: Bot[] = [
     description: "AI assistant",
     namespace: "hivemind",
     icon: User2,
-    systemPrompt: defaultSystemPrompt,
+    systemPromptBeforeContext: promptBeforeContext,
+    systemPromptAfterContext: promptAfterContext,
   },
   {
     id: "lyn_alden",
@@ -93,7 +75,8 @@ export const bots: Bot[] = [
     description: "AI assistant",
     namespace: "lyn_alden",
     icon: User2,
-    systemPrompt: defaultSystemPrompt,
+    systemPromptBeforeContext: promptBeforeContext,
+    systemPromptAfterContext: promptAfterContext,
   },
   {
     id: "on_the_brink",
@@ -101,7 +84,8 @@ export const bots: Bot[] = [
     description: "AI assistant",
     namespace: "on_the_brink",
     icon: User2,
-    systemPrompt: defaultSystemPrompt,
+    systemPromptBeforeContext: promptBeforeContext,
+    systemPromptAfterContext: promptAfterContext,
   },
   {
     id: "bell_curve",
@@ -109,7 +93,8 @@ export const bots: Bot[] = [
     description: "AI assistant",
     namespace: "bell_curve",
     icon: User2,
-    systemPrompt: defaultSystemPrompt,
+    systemPromptBeforeContext: promptBeforeContext,
+    systemPromptAfterContext: promptAfterContext,
   },
 ];
 
