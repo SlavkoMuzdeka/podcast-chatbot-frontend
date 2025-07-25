@@ -1,50 +1,38 @@
 "use client";
 
-import { useState } from "react";
-import { Chat } from "@/components/chat";
-import { ChatSidebar } from "@/components/sidebar";
+import { Loader2 } from "lucide-react";
+import { useAuth } from "@/components/hooks/useAuth";
+import { LoginForm } from "@/components/auth/login-form";
+import { MainDashboard } from "@/components/dashboard/main-dashboard";
 
-/**
- * @description Main page component for the chatbot application
-Manages the state of selected bots and renders the chat interface
- */
 export default function Home() {
-  // State for tracking which bots are currently selected
-  const [selectedBots, setSelectedBots] = useState<string[]>(["empire"]);
+  const { user, isAuthenticated, isLoading, error, login, logout, clearError } =
+    useAuth();
 
-  /**
-   * @description Toggle a bot's selection status
-  Ensures at least one bot remains selected at all times
-   * @param botId - The ID of the bot to toggle
-   */
-  const toggleBotSelection = (botId: string) => {
-    setSelectedBots((prev) => {
-      if (prev.includes(botId)) {
-        // If removing a bot, ensure at least one remains selected
-        const newSelection = prev.filter((id) => id !== botId);
-        return newSelection.length > 0 ? newSelection : prev;
-      }
-      // Add the bot to the selection
-      return [...prev, botId];
-    });
-  };
-
-  return (
-    <div className="flex h-screen w-full overflow-hidden">
-      {/* Sidebar */}
-      <div className="w-64 border-r bg-background">
-        <ChatSidebar
-          selectedBots={selectedBots}
-          onToggleBot={toggleBotSelection}
-        />
-      </div>
-
-      {/* Main content */}
-      <div className="flex-1 overflow-hidden">
-        <div className="container mx-auto h-full max-w-4xl p-4">
-          <Chat selectedBots={selectedBots} />
+  // Show loading spinner while checking authentication
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-white to-slate-100 dark:from-slate-950 dark:via-slate-900 dark:to-slate-800">
+        <div className="flex flex-col items-center gap-4">
+          <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+          <p className="text-slate-600 dark:text-slate-400">Loading...</p>
         </div>
       </div>
-    </div>
-  );
+    );
+  }
+
+  // Show login form if not authenticated
+  if (!isAuthenticated || !user) {
+    return (
+      <LoginForm
+        onLogin={login}
+        isLoading={isLoading}
+        error={error}
+        onClearError={clearError}
+      />
+    );
+  }
+
+  // Show main dashboard if authenticated
+  return <MainDashboard user={user} onLogout={logout} />;
 }
