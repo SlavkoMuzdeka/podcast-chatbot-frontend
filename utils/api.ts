@@ -1,8 +1,5 @@
+import { SECURITY_HEADERS, sanitizeInput } from "@/lib/security";
 import { INAT_NETWORKS_JWT_TOKEN_KEY, API_BASE_URL } from "@/lib/constants";
-import { SECURITY_HEADERS, sanitizeInput, RateLimiter } from "@/lib/security";
-
-// Rate limiter instance
-const rateLimiter = new RateLimiter();
 
 // Token management
 const getStoredToken = (): string | null => {
@@ -13,34 +10,21 @@ const getStoredToken = (): string | null => {
 const setStoredToken = (token: string): void => {
   if (typeof window === "undefined") return;
   sessionStorage.setItem(INAT_NETWORKS_JWT_TOKEN_KEY, token);
-  sessionStorage.setItem(
-    `${INAT_NETWORKS_JWT_TOKEN_KEY}_timestamp`,
-    Date.now().toString()
-  );
 };
 
 const removeStoredToken = (): void => {
   if (typeof window === "undefined") return;
   sessionStorage.removeItem(INAT_NETWORKS_JWT_TOKEN_KEY);
-  sessionStorage.removeItem(`${INAT_NETWORKS_JWT_TOKEN_KEY}_timestamp`);
 };
 
 const isTokenValid = (): boolean => {
   if (typeof window === "undefined") return false;
 
   const token = getStoredToken();
-  const timestamp = sessionStorage.getItem(
-    `${INAT_NETWORKS_JWT_TOKEN_KEY}_timestamp`
-  );
-
-  if (!token || !timestamp) return false;
-
-  // Check if token is expired (24 hours)
-  const tokenAge = Date.now() - Number.parseInt(timestamp);
-  return tokenAge < 24 * 60 * 60 * 1000;
+  if (!token) return false;
+  return true;
 };
 
-// API Error types
 export class APIError extends Error {
   constructor(message: string, public status: number, public code?: string) {
     super(message);
@@ -67,23 +51,6 @@ export const apiFetch = async (
   endpoint: string,
   options: RequestInit = {}
 ): Promise<Response> => {
-  // Validate token before making request
-  if (!isTokenValid() && !endpoint.includes("/auth/")) {
-    removeStoredToken();
-    throw new AuthenticationError("Session expired. Please log in again.");
-  }
-
-  // Rate limiting check
-  const clientId =
-    typeof window !== "undefined"
-      ? window.location.hostname + (getStoredToken()?.slice(-10) || "anonymous")
-      : "server";
-
-  if (rateLimiter.isRateLimited(clientId, 100)) {
-    // 100 requests per window
-    throw new APIError("Too many requests. Please try again later.", 429);
-  }
-
   const token = getStoredToken();
   const headers: Record<string, string> = {
     ...SECURITY_HEADERS,
@@ -100,7 +67,6 @@ export const apiFetch = async (
   if (body && typeof body === "string") {
     try {
       const parsed = JSON.parse(body);
-      // Sanitize string values in the request
       const sanitized = sanitizeRequestData(parsed);
       body = JSON.stringify(sanitized);
     } catch {
@@ -113,7 +79,6 @@ export const apiFetch = async (
     ...options,
     headers,
     body,
-    credentials: "same-origin", // Security: only send cookies to same origin
   };
 
   try {
@@ -218,5 +183,4 @@ export const apiDelete = async (endpoint: string): Promise<any> => {
   return response.json();
 };
 
-// Token management exports
 export { setStoredToken, removeStoredToken, isTokenValid };

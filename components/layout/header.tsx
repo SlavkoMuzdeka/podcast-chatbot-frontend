@@ -1,5 +1,6 @@
 "use client";
 
+import { User as UserType } from "@/utils/models";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -19,7 +20,6 @@ import {
   Podcast,
   ChevronDown,
 } from "lucide-react";
-import type { User as UserType } from "../hooks/useAuth";
 
 interface HeaderProps {
   user: UserType;

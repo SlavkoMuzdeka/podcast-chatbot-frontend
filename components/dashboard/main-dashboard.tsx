@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { User } from "@/utils/models";
 import { Header } from "@/components/layout/header";
 import {
   Card,
@@ -14,7 +15,6 @@ import { MessageSquare, Users, Plus, Bot } from "lucide-react";
 import { EpisodeChatForm } from "./episode-chat-form";
 import { ExpertManagement } from "./expert-management";
 import { CreateExpertForm } from "./create-expert-form";
-import type { User } from "../hooks/useAuth";
 
 interface MainDashboardProps {
   user: User;

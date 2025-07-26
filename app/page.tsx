@@ -1,7 +1,7 @@
 "use client";
 
 import { Loader2 } from "lucide-react";
-import { useAuth } from "@/components/hooks/useAuth";
+import { useAuth } from "@/components/auth/hooks/useAuth";
 import { LoginForm } from "@/components/auth/login-form";
 import { MainDashboard } from "@/components/dashboard/main-dashboard";
 

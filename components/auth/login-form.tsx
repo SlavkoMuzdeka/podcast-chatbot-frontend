@@ -2,23 +2,23 @@
 
 import type React from "react";
 
-import { useState, useEffect } from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { useState } from "react";
 import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { motion, AnimatePresence } from "framer-motion";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import {
   Eye,
-  EyeOff,
   Lock,
   User,
-  AlertCircle,
-  Loader2,
+  EyeOff,
   Shield,
+  Sparkles,
+  ArrowRight,
+  AlertCircle,
 } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
-import { sanitizeInput } from "@/lib/security";
 
 interface LoginFormProps {
   onLogin: (
@@ -36,94 +36,48 @@ export function LoginForm({
   error,
   onClearError,
 }: LoginFormProps) {
-  const [formData, setFormData] = useState({
-    username: "",
-    password: "",
-  });
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
-  // Clear errors when user starts typing
-  useEffect(() => {
-    if (error) {
-      const timer = setTimeout(() => {
-        onClearError();
-      }, 5000); // Auto-clear error after 5 seconds
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    onClearError();
 
-      return () => clearTimeout(timer);
+    if (!username.trim() || !password.trim()) {
+      return;
     }
-  }, [error, onClearError]);
 
-  const validateField = (name: string, value: string): string => {
-    switch (name) {
-      case "username":
-        if (!value.trim()) return "Username is required";
-        if (value.length < 3) return "Username must be at least 3 characters";
-        if (value.length > 50)
-          return "Username must be less than 50 characters";
-        if (!/^[a-zA-Z0-9_.-]+$/.test(value))
-          return "Username contains invalid characters";
-        return "";
-      case "password":
-        if (!value) return "Password is required";
-        if (value.length < 6) return "Password must be at least 6 characters";
-        return "";
-      default:
-        return "";
-    }
+    await onLogin(username.trim(), password);
   };
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    const sanitizedValue = name === "username" ? sanitizeInput(value) : value;
-
-    setFormData((prev) => ({
-      ...prev,
-      [name]: sanitizedValue,
-    }));
-
-    // Clear field error when user starts typing
-    if (fieldErrors[name]) {
-      setFieldErrors((prev) => ({
-        ...prev,
-        [name]: "",
-      }));
-    }
-
-    // Clear global error when user starts typing
+  const handleUsernameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setUsername(e.target.value);
     if (error) {
       onClearError();
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    // Validate all fields
-    const errors: Record<string, string> = {};
-    Object.entries(formData).forEach(([key, value]) => {
-      const error = validateField(key, value);
-      if (error) errors[key] = error;
-    });
-
-    if (Object.keys(errors).length > 0) {
-      setFieldErrors(errors);
-      return;
+  const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setPassword(e.target.value);
+    if (error) {
+      onClearError();
     }
-
-    setFieldErrors({});
-    await onLogin(formData.username, formData.password);
   };
 
-  const isFormValid =
-    formData.username.trim() &&
-    formData.password &&
-    Object.keys(fieldErrors).length === 0;
+  const isFormValid = username.trim().length > 0 && password.trim().length > 0;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100 dark:from-slate-950 dark:via-slate-900 dark:to-slate-800 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100 dark:from-slate-950 dark:via-slate-900 dark:to-slate-800 flex items-center justify-center p-4 relative overflow-hidden">
+      {/* Background Elements */}
+      <div className="absolute inset-0 overflow-hidden">
+        <div className="absolute -top-40 -right-40 w-80 h-80 bg-corporate-100 dark:bg-corporate-900/20 rounded-full mix-blend-multiply filter blur-3xl opacity-70 animate-blob"></div>
+        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-corporate-200 dark:bg-corporate-800/20 rounded-full mix-blend-multiply filter blur-3xl opacity-70 animate-blob animation-delay-2000"></div>
+        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-80 h-80 bg-corporate-50 dark:bg-corporate-700/10 rounded-full mix-blend-multiply filter blur-3xl opacity-50 animate-blob animation-delay-4000"></div>
+      </div>
+
       <motion.div
-        className="w-full max-w-md"
+        className="w-full max-w-md relative z-10"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6, ease: "easeOut" }}
@@ -136,18 +90,29 @@ export function LoginForm({
           transition={{ duration: 0.6, delay: 0.2 }}
         >
           <motion.div
-            className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-blue-600 via-blue-700 to-purple-600 rounded-2xl mb-6 shadow-xl"
+            className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-corporate-600 via-corporate-700 to-corporate-800 rounded-2xl mb-6 shadow-xl shadow-corporate-500/25"
             whileHover={{ scale: 1.05, rotate: 5 }}
             transition={{ type: "spring", stiffness: 300 }}
           >
-            <Shield className="w-8 h-8 text-white" />
+            <Shield className="w-10 h-10 text-white" />
           </motion.div>
 
-          <h1 className="text-3xl font-bold text-slate-900 dark:text-white mb-2">
-            Welcome Back
+          <h1 className="text-4xl font-bold bg-gradient-to-r from-slate-900 via-slate-700 to-slate-600 dark:from-slate-100 dark:via-slate-200 dark:to-slate-300 bg-clip-text text-transparent font-heading mb-2">
+            Podcast Chatbot
           </h1>
-          <p className="text-slate-600 dark:text-slate-400">
-            Sign in to access your podcast chatbot
+
+          <div className="flex items-center justify-center gap-2 mb-3">
+            <Sparkles className="w-4 h-4 text-corporate-600 dark:text-corporate-400" />
+            <p className="text-slate-600 dark:text-slate-300 font-medium">
+              Understand Podcasts Faster
+            </p>
+          </div>
+
+          <p className="text-sm text-slate-500 dark:text-slate-400 font-medium">
+            Powered by{" "}
+            <span className="text-corporate-600 dark:text-corporate-400 font-semibold">
+              Inat Networks
+            </span>
           </p>
         </motion.div>
 
@@ -157,113 +122,106 @@ export function LoginForm({
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.3 }}
         >
-          <Card className="shadow-xl border-0 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl">
-            <CardHeader className="pb-6">
-              <CardTitle className="text-center text-xl">Sign In</CardTitle>
+          <Card className="shadow-2xl border-0 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl rounded-2xl overflow-hidden">
+            <CardHeader className="pb-6 pt-8 px-8">
+              <div className="text-center">
+                <h2 className="text-2xl font-bold text-slate-900 dark:text-white font-heading mb-2">
+                  Welcome Back
+                </h2>
+                <p className="text-slate-600 dark:text-slate-400">
+                  Sign in to access your dashboard
+                </p>
+              </div>
             </CardHeader>
 
-            <CardContent>
+            <CardContent className="px-8 pb-8">
               <form onSubmit={handleSubmit} className="space-y-6">
                 {/* Username Field */}
-                <div className="space-y-2">
-                  <Label htmlFor="username" className="text-sm font-medium">
+                <motion.div
+                  className="space-y-2"
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ duration: 0.5, delay: 0.4 }}
+                >
+                  <Label
+                    htmlFor="username"
+                    className="text-sm font-semibold text-slate-700 dark:text-slate-300"
+                  >
                     Username
                   </Label>
-                  <div className="relative">
-                    <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-4 h-4" />
+                  <div className="relative group">
+                    <User className="absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-400 group-focus-within:text-corporate-600 dark:group-focus-within:text-corporate-400 w-5 h-5 transition-colors duration-200" />
                     <Input
                       id="username"
-                      name="username"
                       type="text"
                       placeholder="Enter your username"
-                      value={formData.username}
-                      onChange={handleInputChange}
-                      className={`pl-10 ${
-                        fieldErrors.username
-                          ? "border-red-500 focus:border-red-500"
-                          : ""
-                      }`}
+                      value={username}
+                      onChange={handleUsernameChange}
+                      className="pl-12 h-12 border-2 border-slate-200 dark:border-slate-700 focus:border-corporate-500 dark:focus:border-corporate-400 rounded-xl bg-slate-50 dark:bg-slate-800/50 text-slate-900 dark:text-white placeholder:text-slate-400 transition-all duration-200 focus:shadow-lg focus:shadow-corporate-500/10"
+                      required
                       disabled={isLoading}
                       autoComplete="username"
-                      maxLength={50}
                     />
                   </div>
-                  <AnimatePresence>
-                    {fieldErrors.username && (
-                      <motion.p
-                        initial={{ opacity: 0, height: 0 }}
-                        animate={{ opacity: 1, height: "auto" }}
-                        exit={{ opacity: 0, height: 0 }}
-                        className="text-sm text-red-600 flex items-center gap-1"
-                      >
-                        <AlertCircle className="w-3 h-3" />
-                        {fieldErrors.username}
-                      </motion.p>
-                    )}
-                  </AnimatePresence>
-                </div>
+                </motion.div>
 
                 {/* Password Field */}
-                <div className="space-y-2">
-                  <Label htmlFor="password" className="text-sm font-medium">
+                <motion.div
+                  className="space-y-2"
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ duration: 0.5, delay: 0.5 }}
+                >
+                  <Label
+                    htmlFor="password"
+                    className="text-sm font-semibold text-slate-700 dark:text-slate-300"
+                  >
                     Password
                   </Label>
-                  <div className="relative">
-                    <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-4 h-4" />
+                  <div className="relative group">
+                    <Lock className="absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-400 group-focus-within:text-corporate-600 dark:group-focus-within:text-corporate-400 w-5 h-5 transition-colors duration-200" />
                     <Input
                       id="password"
-                      name="password"
                       type={showPassword ? "text" : "password"}
                       placeholder="Enter your password"
-                      value={formData.password}
-                      onChange={handleInputChange}
-                      className={`pl-10 pr-10 ${
-                        fieldErrors.password
-                          ? "border-red-500 focus:border-red-500"
-                          : ""
-                      }`}
+                      value={password}
+                      onChange={handlePasswordChange}
+                      className="pl-12 pr-12 h-12 border-2 border-slate-200 dark:border-slate-700 focus:border-corporate-500 dark:focus:border-corporate-400 rounded-xl bg-slate-50 dark:bg-slate-800/50 text-slate-900 dark:text-white placeholder:text-slate-400 transition-all duration-200 focus:shadow-lg focus:shadow-corporate-500/10"
+                      required
                       disabled={isLoading}
                       autoComplete="current-password"
                     />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
-                      disabled={isLoading}
-                    >
-                      {showPassword ? (
-                        <EyeOff className="w-4 h-4" />
-                      ) : (
-                        <Eye className="w-4 h-4" />
-                      )}
-                    </button>
-                  </div>
-                  <AnimatePresence>
-                    {fieldErrors.password && (
-                      <motion.p
-                        initial={{ opacity: 0, height: 0 }}
-                        animate={{ opacity: 1, height: "auto" }}
-                        exit={{ opacity: 0, height: 0 }}
-                        className="text-sm text-red-600 flex items-center gap-1"
+                    <div className="absolute right-4 top-1/2 transform -translate-y-1/2">
+                      <motion.button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="flex items-center justify-center w-5 h-5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors duration-200"
+                        disabled={isLoading}
+                        whileHover={{ scale: 1.1 }}
+                        whileTap={{ scale: 0.9 }}
                       >
-                        <AlertCircle className="w-3 h-3" />
-                        {fieldErrors.password}
-                      </motion.p>
-                    )}
-                  </AnimatePresence>
-                </div>
+                        {showPassword ? (
+                          <EyeOff className="w-5 h-5" />
+                        ) : (
+                          <Eye className="w-5 h-5" />
+                        )}
+                      </motion.button>
+                    </div>
+                  </div>
+                </motion.div>
 
-                {/* Global Error */}
+                {/* Error Alert */}
                 <AnimatePresence>
                   {error && (
                     <motion.div
-                      initial={{ opacity: 0, y: -10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -10 }}
+                      initial={{ opacity: 0, y: -10, height: 0 }}
+                      animate={{ opacity: 1, y: 0, height: "auto" }}
+                      exit={{ opacity: 0, y: -10, height: 0 }}
+                      transition={{ duration: 0.3 }}
                     >
-                      <Alert className="border-red-200 bg-red-50 dark:border-red-800 dark:bg-red-950/50">
-                        <AlertCircle className="h-4 w-4 text-red-600" />
-                        <AlertDescription className="text-red-700 dark:text-red-300">
+                      <Alert className="border-2 border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-950/50 rounded-xl">
+                        <AlertCircle className="h-5 w-5 text-red-600 dark:text-red-400" />
+                        <AlertDescription className="text-red-700 dark:text-red-300 font-medium ml-2">
                           {error}
                         </AlertDescription>
                       </Alert>
@@ -272,20 +230,29 @@ export function LoginForm({
                 </AnimatePresence>
 
                 {/* Submit Button */}
-                <Button
-                  type="submit"
-                  className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-medium shadow-lg hover:shadow-xl transition-all duration-200"
-                  disabled={isLoading || !isFormValid}
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: 0.6 }}
                 >
-                  {isLoading ? (
-                    <div className="flex items-center gap-2">
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                      Signing in...
-                    </div>
-                  ) : (
-                    "Sign In"
-                  )}
-                </Button>
+                  <Button
+                    type="submit"
+                    className="w-full h-12 bg-gradient-to-r from-corporate-600 via-corporate-700 to-corporate-800 hover:from-corporate-700 hover:via-corporate-800 hover:to-corporate-900 text-white font-semibold shadow-xl hover:shadow-2xl hover:shadow-corporate-500/25 transition-all duration-300 rounded-xl border-0 group"
+                    disabled={isLoading || !isFormValid}
+                  >
+                    {isLoading ? (
+                      <div className="flex items-center justify-center space-x-2">
+                        <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                        <span>Signing in...</span>
+                      </div>
+                    ) : (
+                      <div className="flex items-center justify-center space-x-2 group-hover:space-x-3 transition-all duration-200">
+                        <span>Sign In</span>
+                        <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform duration-200" />
+                      </div>
+                    )}
+                  </Button>
+                </motion.div>
               </form>
             </CardContent>
           </Card>
@@ -293,14 +260,20 @@ export function LoginForm({
 
         {/* Footer */}
         <motion.div
-          className="text-center mt-6"
+          className="text-center mt-8"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.6, delay: 0.7 }}
         >
-          <p className="text-sm text-slate-600 dark:text-slate-400">
-            © 2025 Podcast Chatbot. All rights reserved.
-          </p>
+          <div className="inline-flex items-center justify-center px-4 py-2 bg-white/60 dark:bg-slate-900/60 backdrop-blur-sm rounded-full border border-slate-200/50 dark:border-slate-700/50">
+            <p className="text-sm text-slate-600 dark:text-slate-400 font-medium">
+              © 2025{" "}
+              <span className="text-corporate-600 dark:text-corporate-400 font-semibold">
+                Inat Networks
+              </span>
+              . All rights reserved.
+            </p>
+          </div>
         </motion.div>
       </motion.div>
     </div>
