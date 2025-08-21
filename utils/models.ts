@@ -10,6 +10,10 @@ export interface User {
 export interface AuthState {
   user: User | null;
   isAuthenticated: boolean;
-  isLoading: boolean;
   error: string | null;
+}
+
+export interface Episode {
+  title: string;
+  content: string;
 }

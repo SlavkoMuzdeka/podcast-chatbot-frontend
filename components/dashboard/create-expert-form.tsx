@@ -2,216 +2,453 @@
 
 import type React from "react";
 
+import type { Episode } from "@/utils/models";
+
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
+import { apiFetch } from "@/utils/api";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { motion, AnimatePresence } from "framer-motion";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Loader2, Plus, X, CheckCircle } from "lucide-react";
-import { apiFetch } from "@/utils/api";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import {
+  Bot,
+  Plus,
+  User,
+  Trash2,
+  Loader2,
+  FileText,
+  Sparkles,
+  CheckCircle,
+  AlertCircle,
+} from "lucide-react";
 
 export function CreateExpertForm() {
   const [name, setName] = useState("");
-  const [description, setDescription] = useState("");
-  const [episodeUrls, setEpisodeUrls] = useState<string[]>([""]);
-  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
-  const [success, setSuccess] = useState(false);
+  const [success, setSuccess] = useState("");
+  const [description, setDescription] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [episodes, setEpisodes] = useState<Episode[]>([
+    { title: "", content: "" },
+  ]);
 
-  const addEpisodeUrl = () => {
-    setEpisodeUrls([...episodeUrls, ""]);
+  const addEpisode = () => {
+    setEpisodes([...episodes, { title: "", content: "" }]);
   };
 
-  const removeEpisodeUrl = (index: number) => {
-    if (episodeUrls.length > 1) {
-      setEpisodeUrls(episodeUrls.filter((_, i) => i !== index));
+  const removeEpisode = (index: number) => {
+    if (episodes.length > 1) {
+      setEpisodes(episodes.filter((_, i) => i !== index));
     }
   };
 
-  const updateEpisodeUrl = (index: number, value: string) => {
-    const newUrls = [...episodeUrls];
-    newUrls[index] = value;
-    setEpisodeUrls(newUrls);
+  const updateEpisode = (
+    index: number,
+    field: keyof Episode,
+    value: string
+  ) => {
+    const updatedEpisodes = episodes.map((episode, i) =>
+      i === index ? { ...episode, [field]: value } : episode
+    );
+    setEpisodes(updatedEpisodes);
+    if (error) setError("");
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError("");
+    setSuccess("");
 
-    const validUrls = episodeUrls.filter((url) => url.trim());
-    if (!name.trim() || validUrls.length === 0) {
-      setError("Please provide a name and at least one episode URL");
+    if (!name.trim()) {
+      setError("Expert name is required");
       return;
     }
 
-    setIsLoading(true);
-    setError("");
-    setSuccess(false);
+    if (!description.trim()) {
+      setError("Expert description is required");
+      return;
+    }
+
+    const validEpisodes = episodes.filter(
+      (ep) => ep.title.trim() && ep.content.trim()
+    );
+
+    if (validEpisodes.length === 0) {
+      setError("At least one episode with title and content is required");
+      return;
+    }
+
+    setIsSubmitting(true);
 
     try {
-      const response = await apiFetch("/api/experts", {
+      const response = await apiFetch("/api/experts/", {
         method: "POST",
         body: JSON.stringify({
           name: name.trim(),
           description: description.trim(),
-          episode_urls: validUrls,
+          episodes: validEpisodes,
         }),
       });
 
       const data = await response.json();
 
       if (data.success) {
-        setSuccess(true);
-        setName("");
-        setDescription("");
-        setEpisodeUrls([""]);
+        setSuccess("Expert created successfully!");
       } else {
         setError(data.error || "Failed to create expert");
       }
     } catch (err) {
       setError("Network error. Please try again.");
     } finally {
-      setIsLoading(false);
+      setIsSubmitting(false);
     }
   };
 
+  const resetForm = () => {
+    setName("");
+    setDescription("");
+    setEpisodes([{ title: "", content: "" }]);
+    setError("");
+    setSuccess("");
+  };
+
+  const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setName(e.target.value);
+    if (error) setError("");
+  };
+
+  const handleDescriptionChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setDescription(e.target.value);
+    if (error) setError("");
+  };
+
+  const isFormValid =
+    name.trim().length > 0 &&
+    description.trim().length > 0 &&
+    episodes.some((ep) => ep.title.trim() && ep.content.trim());
+
   return (
-    <div className="space-y-6">
-      <form onSubmit={handleSubmit} className="space-y-6">
-        <div className="grid gap-4 md:grid-cols-2">
-          <div className="space-y-2">
-            <Label htmlFor="expert-name">Expert Name *</Label>
-            <Input
-              id="expert-name"
-              placeholder="e.g., AI Expert, Marketing Guru"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              disabled={isLoading}
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="expert-description">Description</Label>
-            <Input
-              id="expert-description"
-              placeholder="Brief description of the expert's expertise"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              disabled={isLoading}
-            />
-          </div>
-        </div>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100 dark:from-slate-950 dark:via-slate-900 dark:to-slate-800 flex items-center justify-center p-4 relative overflow-hidden">
+      {/* Background Elements */}
+      <div className="absolute inset-0 overflow-hidden">
+        <div className="absolute -top-40 -right-40 w-80 h-80 bg-corporate-100 dark:bg-corporate-900/20 rounded-full mix-blend-multiply filter blur-3xl opacity-70 animate-blob"></div>
+        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-corporate-200 dark:bg-corporate-800/20 rounded-full mix-blend-multiply filter blur-3xl opacity-70 animate-blob animation-delay-2000"></div>
+        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-80 h-80 bg-corporate-50 dark:bg-corporate-700/10 rounded-full mix-blend-multiply filter blur-3xl opacity-50 animate-blob animation-delay-4000"></div>
+      </div>
 
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <Label>Episode URLs *</Label>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={addEpisodeUrl}
-              disabled={isLoading}
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              Add Episode
-            </Button>
+      <motion.div
+        className="w-full max-w-4xl relative z-10"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6, ease: "easeOut" }}
+      >
+        {/* Header */}
+        <motion.div
+          className="text-center mb-8"
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.2 }}
+        >
+          <motion.div
+            className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-corporate-600 via-corporate-700 to-corporate-800 rounded-2xl mb-6 shadow-xl shadow-corporate-500/25"
+            whileHover={{ scale: 1.05, rotate: 5 }}
+            transition={{ type: "spring", stiffness: 300 }}
+          >
+            <Bot className="w-10 h-10 text-white" />
+          </motion.div>
+
+          <h1 className="text-4xl font-bold bg-gradient-to-r from-slate-900 via-slate-700 to-slate-600 dark:from-slate-100 dark:via-slate-200 dark:to-slate-300 bg-clip-text text-transparent font-heading mb-2">
+            Create AI Expert
+          </h1>
+
+          <div className="flex items-center justify-center gap-2 mb-3">
+            <Sparkles className="w-4 h-4 text-corporate-600 dark:text-corporate-400" />
+            <p className="text-slate-600 dark:text-slate-300 font-medium">
+              Transform Content into Intelligence
+            </p>
           </div>
 
-          <div className="space-y-3">
-            {episodeUrls.map((url, index) => (
-              <div key={index} className="flex gap-2">
-                <Input
-                  type="url"
-                  placeholder="https://youtube.com/watch?v=... or RSS episode link"
-                  value={url}
-                  onChange={(e) => updateEpisodeUrl(index, e.target.value)}
-                  disabled={isLoading}
-                  className="flex-1"
-                />
-                {episodeUrls.length > 1 && (
+          <p className="text-sm text-slate-500 dark:text-slate-400 font-medium">
+            Powered by{" "}
+            <span className="text-corporate-600 dark:text-corporate-400 font-semibold">
+              Inat Networks
+            </span>
+          </p>
+        </motion.div>
+
+        {/* Main Form Card */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.3 }}
+        >
+          <Card className="shadow-2xl border-0 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl rounded-2xl overflow-hidden">
+            <CardHeader className="pb-6 pt-8 px-8">
+              <div className="text-center">
+                <h2 className="text-2xl font-bold text-slate-900 dark:text-white font-heading mb-2">
+                  Expert Configuration
+                </h2>
+                <p className="text-slate-600 dark:text-slate-400">
+                  Build your intelligent conversational expert
+                </p>
+              </div>
+            </CardHeader>
+
+            <CardContent className="px-8 pb-8">
+              <form onSubmit={handleSubmit} className="space-y-8">
+                {/* Expert Details */}
+                <motion.div
+                  className="space-y-6"
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ duration: 0.5, delay: 0.4 }}
+                >
+                  <div className="flex items-center gap-2 mb-4">
+                    <User className="w-5 h-5 text-corporate-600 dark:text-corporate-400" />
+                    <h3 className="text-lg font-semibold text-slate-900 dark:text-white">
+                      Expert Details
+                    </h3>
+                  </div>
+
+                  <div className="grid gap-6 md:grid-cols-2">
+                    <div className="space-y-2">
+                      <Label
+                        htmlFor="name"
+                        className="text-sm font-semibold text-slate-700 dark:text-slate-300"
+                      >
+                        Expert Name *
+                      </Label>
+                      <div className="relative group">
+                        <Input
+                          id="name"
+                          type="text"
+                          placeholder="e.g., Joe Rogan Expert, Tech Podcast Guru"
+                          value={name}
+                          onChange={handleNameChange}
+                          className="h-12 border-2 border-slate-200 dark:border-slate-700 focus:border-corporate-500 dark:focus:border-corporate-400 rounded-xl bg-slate-50 dark:bg-slate-800/50 text-slate-900 dark:text-white placeholder:text-slate-400 transition-all duration-200 focus:shadow-lg focus:shadow-corporate-500/10"
+                          required
+                          autoComplete="off"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label
+                        htmlFor="description"
+                        className="text-sm font-semibold text-slate-700 dark:text-slate-300"
+                      >
+                        Description *
+                      </Label>
+                      <div className="relative group">
+                        <Input
+                          id="description"
+                          type="text"
+                          placeholder="Brief description of expertise area"
+                          value={description}
+                          onChange={handleDescriptionChange}
+                          className="h-12 border-2 border-slate-200 dark:border-slate-700 focus:border-corporate-500 dark:focus:border-corporate-400 rounded-xl bg-slate-50 dark:bg-slate-800/50 text-slate-900 dark:text-white placeholder:text-slate-400 transition-all duration-200 focus:shadow-lg focus:shadow-corporate-500/10"
+                          required
+                          autoComplete="off"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </motion.div>
+
+                {/* Episodes Section */}
+                <motion.div
+                  className="space-y-6"
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ duration: 0.5, delay: 0.5 }}
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <FileText className="w-5 h-5 text-corporate-600 dark:text-corporate-400" />
+                      <h3 className="text-lg font-semibold text-slate-900 dark:text-white">
+                        Training Content
+                      </h3>
+                    </div>
+                    <Button
+                      type="button"
+                      onClick={addEpisode}
+                      variant="outline"
+                      size="sm"
+                      className="border-2 border-corporate-200 dark:border-corporate-800 text-corporate-600 dark:text-corporate-400 hover:bg-corporate-50 dark:hover:bg-corporate-950/20 bg-transparent rounded-xl"
+                    >
+                      <Plus className="w-4 h-4 mr-2" />
+                      Add Episode
+                    </Button>
+                  </div>
+
+                  <div className="space-y-6">
+                    {episodes.map((episode, index) => (
+                      <motion.div
+                        key={index}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.3, delay: index * 0.1 }}
+                      >
+                        <Card className="border-2 border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 rounded-xl overflow-hidden">
+                          <CardHeader className="pb-3 bg-gradient-to-r from-slate-100/50 to-slate-50/50 dark:from-slate-800/50 dark:to-slate-800/30">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-3">
+                                <div className="w-8 h-8 bg-gradient-to-br from-corporate-600 to-corporate-700 rounded-lg flex items-center justify-center text-white font-semibold text-sm">
+                                  {index + 1}
+                                </div>
+                                <h4 className="font-semibold text-slate-900 dark:text-white">
+                                  Episode {index + 1}
+                                </h4>
+                              </div>
+                              {episodes.length > 1 && (
+                                <Button
+                                  type="button"
+                                  onClick={() => removeEpisode(index)}
+                                  variant="ghost"
+                                  size="sm"
+                                  className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/20 rounded-lg"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </Button>
+                              )}
+                            </div>
+                          </CardHeader>
+                          <CardContent className="space-y-4 p-6">
+                            <div className="space-y-2">
+                              <Label className="text-sm font-semibold text-slate-700 dark:text-slate-300">
+                                Episode Title *
+                              </Label>
+                              <Input
+                                value={episode.title}
+                                onChange={(e) =>
+                                  updateEpisode(index, "title", e.target.value)
+                                }
+                                placeholder="Enter a descriptive title for this content"
+                                className="h-12 border-2 border-slate-200 dark:border-slate-700 focus:border-corporate-500 dark:focus:border-corporate-400 rounded-xl bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder:text-slate-400 transition-all duration-200 focus:shadow-lg focus:shadow-corporate-500/10"
+                                required
+                                autoComplete="off"
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <Label className="text-sm font-semibold text-slate-700 dark:text-slate-300">
+                                Content (Summary or Full Transcript) *
+                              </Label>
+                              <Textarea
+                                value={episode.content}
+                                onChange={(e) =>
+                                  updateEpisode(
+                                    index,
+                                    "content",
+                                    e.target.value
+                                  )
+                                }
+                                placeholder="Paste your podcast transcript, summary, or any text content that will train this expert..."
+                                rows={6}
+                                className="border-2 border-slate-200 dark:border-slate-700 focus:border-corporate-500 dark:focus:border-corporate-400 rounded-xl bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder:text-slate-400 transition-all duration-200 focus:shadow-lg focus:shadow-corporate-500/10 resize-none"
+                                required
+                                autoComplete="off"
+                                spellCheck="false"
+                                data-gramm="false"
+                                data-gramm_editor="false"
+                                data-enable-grammarly="false"
+                              />
+                              <div className="flex justify-between text-xs text-slate-500 dark:text-slate-400">
+                                <span>
+                                  The more detailed content you provide, the
+                                  smarter your expert becomes
+                                </span>
+                                <span>{episode.content.length} characters</span>
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      </motion.div>
+                    ))}
+                  </div>
+                </motion.div>
+
+                {/* Error Alert */}
+                <AnimatePresence>
+                  {error && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -10, height: 0 }}
+                      animate={{ opacity: 1, y: 0, height: "auto" }}
+                      exit={{ opacity: 0, y: -10, height: 0 }}
+                      transition={{ duration: 0.3 }}
+                    >
+                      <Alert className="border-2 border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-950/50 rounded-xl">
+                        <AlertCircle className="h-5 w-5 text-red-600 dark:text-red-400" />
+                        <AlertDescription className="text-red-700 dark:text-red-300 font-medium ml-2">
+                          {error}
+                        </AlertDescription>
+                      </Alert>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+
+                {/* Success Alert */}
+                <AnimatePresence>
+                  {success && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -10, height: 0 }}
+                      animate={{ opacity: 1, y: 0, height: "auto" }}
+                      exit={{ opacity: 0, y: -10, height: 0 }}
+                      transition={{ duration: 0.3 }}
+                    >
+                      <Alert className="border-2 border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950/50 rounded-xl">
+                        <CheckCircle className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
+                        <AlertDescription className="text-emerald-700 dark:text-emerald-300 font-medium ml-2">
+                          {success}
+                        </AlertDescription>
+                      </Alert>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+
+                {/* Action Buttons */}
+                <motion.div
+                  className="flex items-center gap-4 pt-6 border-t border-slate-200 dark:border-slate-800"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: 0.6 }}
+                >
                   <Button
                     type="button"
                     variant="outline"
-                    size="icon"
-                    onClick={() => removeEpisodeUrl(index)}
-                    disabled={isLoading}
+                    onClick={resetForm}
+                    disabled={isSubmitting}
+                    className="h-12 px-6 border-2 border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 rounded-xl text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-all duration-200"
                   >
-                    <X className="w-4 h-4" />
+                    Reset Form
                   </Button>
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {error && (
-          <Alert className="border-red-200 bg-red-50 dark:border-red-800 dark:bg-red-950/50">
-            <AlertDescription className="text-red-700 dark:text-red-300">
-              {error}
-            </AlertDescription>
-          </Alert>
-        )}
-
-        {success && (
-          <Alert className="border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-950/50">
-            <CheckCircle className="w-4 h-4 text-green-600 dark:text-green-400" />
-            <AlertDescription className="text-green-700 dark:text-green-300">
-              Expert created successfully! You can now find it in the "My
-              Experts" tab.
-            </AlertDescription>
-          </Alert>
-        )}
-
-        <Button
-          type="submit"
-          disabled={
-            isLoading ||
-            !name.trim() ||
-            episodeUrls.filter((url) => url.trim()).length === 0
-          }
-          className="w-full sm:w-auto"
-        >
-          {isLoading ? (
-            <>
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              Creating Expert...
-            </>
-          ) : (
-            <>
-              <Plus className="w-4 h-4 mr-2" />
-              Create Expert
-            </>
-          )}
-        </Button>
-      </form>
-
-      {/* Info Card */}
-      <Card className="border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-950/50">
-        <CardHeader className="pb-3">
-          <CardTitle className="text-sm font-medium text-blue-900 dark:text-blue-100">
-            How it works
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="pt-0">
-          <ol className="space-y-2 text-sm text-blue-800 dark:text-blue-200">
-            <li className="flex gap-2">
-              <span className="font-medium">1.</span>
-              Add multiple podcast episode URLs from YouTube or RSS feeds
-            </li>
-            <li className="flex gap-2">
-              <span className="font-medium">2.</span>
-              Our system processes and transcribes each episode
-            </li>
-            <li className="flex gap-2">
-              <span className="font-medium">3.</span>
-              Knowledge is aggregated and indexed for your custom expert
-            </li>
-            <li className="flex gap-2">
-              <span className="font-medium">4.</span>
-              Chat with your expert who answers based on all episode content
-            </li>
-          </ol>
-        </CardContent>
-      </Card>
+                  <Button
+                    type="submit"
+                    disabled={!isFormValid || isSubmitting}
+                    className="flex-1 h-12 bg-gradient-to-r from-corporate-600 via-corporate-700 to-corporate-800 hover:from-corporate-700 hover:via-corporate-800 hover:to-corporate-900 text-white font-semibold shadow-xl hover:shadow-2xl hover:shadow-corporate-500/25 transition-all duration-300 rounded-xl border-0 group"
+                  >
+                    <div className="flex items-center justify-center space-x-2 group-hover:space-x-3 transition-all duration-200">
+                      {isSubmitting ? (
+                        <>
+                          <Loader2 className="w-5 h-5 animate-spin" />
+                          <span>Creating Expert...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Bot className="w-5 h-5" />
+                          <span>Create AI Expert</span>
+                        </>
+                      )}
+                    </div>
+                  </Button>
+                </motion.div>
+              </form>
+            </CardContent>
+          </Card>
+        </motion.div>
+      </motion.div>
     </div>
   );
 }

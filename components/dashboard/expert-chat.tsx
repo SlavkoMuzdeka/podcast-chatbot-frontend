@@ -2,188 +2,309 @@
 
 import type React from "react";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { AutoResizeTextarea } from "@/components/ui/auto-resize-textarea";
-import { ArrowLeft, Send, Bot, Loader2 } from "lucide-react";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+import { ArrowLeft, Send, Bot, User, Loader2, Database } from "lucide-react";
 import { apiFetch } from "@/utils/api";
-import { MessageBubble } from "@/components/ui/message-bubble";
 
-interface ExpertChatProps {
-  sessionId: string;
-  expert: {
-    id: string;
-    name: string;
-    description: string;
-  };
-  onBack: () => void;
+interface Expert {
+  id: string;
+  name: string;
+  description: string;
+  episode_count: number;
+  namespace: string;
 }
 
 interface Message {
   id: string;
-  role: "user" | "assistant";
   content: string;
-  pending?: boolean;
-  error?: boolean;
+  role: "user" | "assistant";
+  timestamp: string;
+}
+
+interface ExpertChatProps {
+  sessionId: string;
+  expert: Expert;
+  onBack: () => void;
 }
 
 export function ExpertChat({ sessionId, expert, onBack }: ExpertChatProps) {
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: "welcome",
-      role: "assistant",
-      content: `Hello! I'm ${expert.name}. ${expert.description} Ask me anything based on my knowledge from the podcast episodes I've learned from.`,
-    },
-  ]);
-  const [input, setInput] = useState("");
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [inputMessage, setInputMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [isInitializing, setIsInitializing] = useState(true);
+  const scrollAreaRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    initializeChat();
+  }, [sessionId]);
+
+  useEffect(() => {
+    scrollToBottom();
   }, [messages]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!input.trim() || isLoading) return;
+  const initializeChat = async () => {
+    try {
+      // Add welcome message
+      const welcomeMessage: Message = {
+        id: "welcome",
+        content: `Hello! I'm your AI expert for ${expert.name}. I have knowledge from ${expert.episode_count} episodes. What would you like to discuss?`,
+        role: "assistant",
+        timestamp: new Date().toISOString(),
+      };
+      setMessages([welcomeMessage]);
+    } catch (error) {
+      // Handle initialization error
+    } finally {
+      setIsInitializing(false);
+    }
+  };
+
+  const scrollToBottom = () => {
+    if (scrollAreaRef.current) {
+      const scrollContainer = scrollAreaRef.current.querySelector(
+        "[data-radix-scroll-area-viewport]"
+      );
+      if (scrollContainer) {
+        scrollContainer.scrollTop = scrollContainer.scrollHeight;
+      }
+    }
+  };
+
+  const sendMessage = async () => {
+    if (!inputMessage.trim() || isLoading) return;
 
     const userMessage: Message = {
       id: Date.now().toString(),
+      content: inputMessage.trim(),
       role: "user",
-      content: input,
+      timestamp: new Date().toISOString(),
     };
 
     setMessages((prev) => [...prev, userMessage]);
-    setInput("");
+    setInputMessage("");
     setIsLoading(true);
 
-    // Add pending message
-    const pendingMessage: Message = {
-      id: `${Date.now()}-pending`,
-      role: "assistant",
-      content: "",
-      pending: true,
-    };
-    setMessages((prev) => [...prev, pendingMessage]);
-
     try {
-      const response = await apiFetch(`/api/chat/${sessionId}/message`, {
+      const response = await apiFetch(`/api/experts/${expert.id}/chat`, {
         method: "POST",
-        body: JSON.stringify({ message: userMessage.content }),
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          message: userMessage.content,
+          session_id: sessionId,
+        }),
       });
 
       const data = await response.json();
 
       if (data.success) {
-        setMessages((prev) =>
-          prev.map((msg) =>
-            msg.pending
-              ? {
-                  ...msg,
-                  content: data.response,
-                  pending: false,
-                }
-              : msg
-          )
-        );
+        const assistantMessage: Message = {
+          id: (Date.now() + 1).toString(),
+          content: data.response,
+          role: "assistant",
+          timestamp: new Date().toISOString(),
+        };
+        setMessages((prev) => [...prev, assistantMessage]);
       } else {
-        setMessages((prev) =>
-          prev.map((msg) =>
-            msg.pending
-              ? {
-                  ...msg,
-                  content: "Sorry, I encountered an error. Please try again.",
-                  pending: false,
-                  error: true,
-                }
-              : msg
-          )
-        );
+        const errorMessage: Message = {
+          id: (Date.now() + 1).toString(),
+          content: "Sorry, I encountered an error. Please try again.",
+          role: "assistant",
+          timestamp: new Date().toISOString(),
+        };
+        setMessages((prev) => [...prev, errorMessage]);
       }
     } catch (error) {
-      setMessages((prev) =>
-        prev.map((msg) =>
-          msg.pending
-            ? {
-                ...msg,
-                content: "Network error. Please check your connection.",
-                pending: false,
-                error: true,
-              }
-            : msg
-        )
-      );
+      const errorMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        content: "Network error. Please check your connection and try again.",
+        role: "assistant",
+        timestamp: new Date().toISOString(),
+      };
+      setMessages((prev) => [...prev, errorMessage]);
     } finally {
       setIsLoading(false);
     }
   };
 
-  return (
-    <div className="space-y-4">
-      {/* Header */}
-      <div className="flex items-center gap-4">
-        <Button variant="outline" size="sm" onClick={onBack}>
-          <ArrowLeft className="w-4 h-4 mr-2" />
-          Back
-        </Button>
-        <div className="flex-1">
-          <div className="flex items-center gap-2">
-            <Bot className="w-5 h-5 text-blue-600" />
-            <h3 className="font-semibold text-lg">{expert.name}</h3>
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      sendMessage();
+    }
+  };
+
+  const formatTime = (timestamp: string) => {
+    return new Date(timestamp).toLocaleTimeString([], {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  };
+
+  if (isInitializing) {
+    return (
+      <div className="flex items-center justify-center py-16">
+        <div className="text-center space-y-4">
+          <div className="w-16 h-16 bg-gradient-to-br from-blue-100 to-purple-100 dark:from-blue-900/20 dark:to-purple-900/20 rounded-2xl flex items-center justify-center mx-auto">
+            <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
           </div>
-          <p className="text-sm text-muted-foreground">{expert.description}</p>
+          <div>
+            <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-1">
+              Initializing Chat
+            </h3>
+            <p className="text-slate-600 dark:text-slate-400">
+              Connecting to {expert.name}...
+            </p>
+          </div>
         </div>
       </div>
+    );
+  }
 
-      {/* Chat Interface */}
-      <Card className="h-[600px] flex flex-col">
-        <CardContent className="flex-1 overflow-hidden p-0">
-          <ScrollArea className="h-full">
-            <div className="flex flex-col gap-4 p-4">
+  return (
+    <div className="flex flex-col h-[calc(100vh-12rem)]">
+      {/* Header */}
+      <Card className="border-slate-200 dark:border-slate-800 shadow-lg mb-4">
+        <CardHeader className="pb-4">
+          <div className="flex items-center gap-4">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={onBack}
+              className="hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg"
+            >
+              <ArrowLeft className="w-4 h-4" />
+            </Button>
+            <div className="flex items-center gap-3 flex-1">
+              <div className="w-12 h-12 bg-gradient-to-br from-blue-600 via-purple-600 to-blue-700 rounded-xl flex items-center justify-center shadow-lg ring-1 ring-white/20">
+                <Bot className="w-6 h-6 text-white" />
+              </div>
+              <div className="flex-1">
+                <CardTitle className="text-lg font-bold text-slate-900 dark:text-white">
+                  {expert.name}
+                </CardTitle>
+                <div className="flex items-center gap-3 mt-1">
+                  <p className="text-sm text-slate-600 dark:text-slate-400">
+                    {expert.description}
+                  </p>
+                  <div className="flex items-center gap-2">
+                    <Badge
+                      variant="secondary"
+                      className="bg-emerald-100 text-emerald-800 dark:bg-emerald-900/20 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800"
+                    >
+                      <Database className="w-3 h-3 mr-1" />
+                      {expert.episode_count} episodes
+                    </Badge>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </CardHeader>
+      </Card>
+
+      {/* Messages */}
+      <Card className="flex-1 border-slate-200 dark:border-slate-800 shadow-lg">
+        <CardContent className="p-0 h-full">
+          <ScrollArea ref={scrollAreaRef} className="h-full p-4">
+            <div className="space-y-4">
               {messages.map((message) => (
-                <MessageBubble key={message.id} message={message} />
+                <div
+                  key={message.id}
+                  className={`flex gap-3 ${
+                    message.role === "user" ? "justify-end" : "justify-start"
+                  }`}
+                >
+                  {message.role === "assistant" && (
+                    <Avatar className="w-8 h-8 mt-1">
+                      <AvatarFallback className="bg-gradient-to-br from-blue-600 to-purple-600 text-white text-xs">
+                        <Bot className="w-4 h-4" />
+                      </AvatarFallback>
+                    </Avatar>
+                  )}
+                  <div
+                    className={`max-w-[80%] rounded-2xl px-4 py-3 ${
+                      message.role === "user"
+                        ? "bg-gradient-to-r from-blue-600 to-purple-600 text-white"
+                        : "bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white"
+                    }`}
+                  >
+                    <p className="text-sm leading-relaxed whitespace-pre-wrap">
+                      {message.content}
+                    </p>
+                    <p
+                      className={`text-xs mt-2 ${
+                        message.role === "user"
+                          ? "text-blue-100"
+                          : "text-slate-500 dark:text-slate-400"
+                      }`}
+                    >
+                      {formatTime(message.timestamp)}
+                    </p>
+                  </div>
+                  {message.role === "user" && (
+                    <Avatar className="w-8 h-8 mt-1">
+                      <AvatarFallback className="bg-slate-600 text-white text-xs">
+                        <User className="w-4 h-4" />
+                      </AvatarFallback>
+                    </Avatar>
+                  )}
+                </div>
               ))}
-              <div ref={messagesEndRef} />
+              {isLoading && (
+                <div className="flex gap-3 justify-start">
+                  <Avatar className="w-8 h-8 mt-1">
+                    <AvatarFallback className="bg-gradient-to-br from-blue-600 to-purple-600 text-white text-xs">
+                      <Bot className="w-4 h-4" />
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="bg-slate-100 dark:bg-slate-800 rounded-2xl px-4 py-3">
+                    <div className="flex items-center gap-2">
+                      <Loader2 className="w-4 h-4 animate-spin text-blue-600" />
+                      <span className="text-sm text-slate-600 dark:text-slate-400">
+                        Thinking...
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           </ScrollArea>
         </CardContent>
+      </Card>
 
-        {/* Input */}
-        <div className="border-t p-4">
-          <form onSubmit={handleSubmit} className="flex items-center gap-2">
-            <div className="relative flex-1">
-              <AutoResizeTextarea
-                placeholder={`Ask ${expert.name} anything...`}
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                maxRows={4}
-                className="w-full rounded-2xl border bg-background px-4 py-3 pr-12 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && !e.shiftKey) {
-                    e.preventDefault();
-                    if (input.trim() && !isLoading) {
-                      handleSubmit(e);
-                    }
-                  }
-                }}
-              />
-              <Button
-                type="submit"
-                size="icon"
-                className="absolute right-2 top-1/2 h-8 w-8 -translate-y-1/2 rounded-full"
-                disabled={isLoading || !input.trim()}
-              >
-                {isLoading ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <Send className="h-4 w-4" />
-                )}
-              </Button>
-            </div>
-          </form>
-        </div>
+      {/* Input */}
+      <Card className="border-slate-200 dark:border-slate-800 shadow-lg mt-4">
+        <CardContent className="p-4">
+          <div className="flex gap-3">
+            <Input
+              value={inputMessage}
+              onChange={(e) => setInputMessage(e.target.value)}
+              onKeyPress={handleKeyPress}
+              placeholder="Ask me anything about the podcast episodes..."
+              className="flex-1 border-slate-300 dark:border-slate-700 focus:border-blue-500 dark:focus:border-blue-400"
+              disabled={isLoading}
+            />
+            <Button
+              onClick={sendMessage}
+              disabled={!inputMessage.trim() || isLoading}
+              className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg hover:shadow-xl transition-all duration-200"
+            >
+              {isLoading ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Send className="w-4 h-4" />
+              )}
+            </Button>
+          </div>
+        </CardContent>
       </Card>
     </div>
   );

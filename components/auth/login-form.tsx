@@ -25,17 +25,11 @@ interface LoginFormProps {
     username: string,
     password: string
   ) => Promise<{ success: boolean; error?: string }>;
-  isLoading: boolean;
   error: string | null;
   onClearError: () => void;
 }
 
-export function LoginForm({
-  onLogin,
-  isLoading,
-  error,
-  onClearError,
-}: LoginFormProps) {
+export function LoginForm({ onLogin, error, onClearError }: LoginFormProps) {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -159,7 +153,6 @@ export function LoginForm({
                       onChange={handleUsernameChange}
                       className="pl-12 h-12 border-2 border-slate-200 dark:border-slate-700 focus:border-corporate-500 dark:focus:border-corporate-400 rounded-xl bg-slate-50 dark:bg-slate-800/50 text-slate-900 dark:text-white placeholder:text-slate-400 transition-all duration-200 focus:shadow-lg focus:shadow-corporate-500/10"
                       required
-                      disabled={isLoading}
                       autoComplete="username"
                     />
                   </div>
@@ -188,7 +181,6 @@ export function LoginForm({
                       onChange={handlePasswordChange}
                       className="pl-12 pr-12 h-12 border-2 border-slate-200 dark:border-slate-700 focus:border-corporate-500 dark:focus:border-corporate-400 rounded-xl bg-slate-50 dark:bg-slate-800/50 text-slate-900 dark:text-white placeholder:text-slate-400 transition-all duration-200 focus:shadow-lg focus:shadow-corporate-500/10"
                       required
-                      disabled={isLoading}
                       autoComplete="current-password"
                     />
                     <div className="absolute right-4 top-1/2 transform -translate-y-1/2">
@@ -196,7 +188,6 @@ export function LoginForm({
                         type="button"
                         onClick={() => setShowPassword(!showPassword)}
                         className="flex items-center justify-center w-5 h-5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors duration-200"
-                        disabled={isLoading}
                         whileHover={{ scale: 1.1 }}
                         whileTap={{ scale: 0.9 }}
                       >
@@ -238,19 +229,12 @@ export function LoginForm({
                   <Button
                     type="submit"
                     className="w-full h-12 bg-gradient-to-r from-corporate-600 via-corporate-700 to-corporate-800 hover:from-corporate-700 hover:via-corporate-800 hover:to-corporate-900 text-white font-semibold shadow-xl hover:shadow-2xl hover:shadow-corporate-500/25 transition-all duration-300 rounded-xl border-0 group"
-                    disabled={isLoading || !isFormValid}
+                    disabled={!isFormValid}
                   >
-                    {isLoading ? (
-                      <div className="flex items-center justify-center space-x-2">
-                        <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                        <span>Signing in...</span>
-                      </div>
-                    ) : (
-                      <div className="flex items-center justify-center space-x-2 group-hover:space-x-3 transition-all duration-200">
-                        <span>Sign In</span>
-                        <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform duration-200" />
-                      </div>
-                    )}
+                    <div className="flex items-center justify-center space-x-2 group-hover:space-x-3 transition-all duration-200">
+                      <span>Sign In</span>
+                      <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform duration-200" />
+                    </div>
                   </Button>
                 </motion.div>
               </form>

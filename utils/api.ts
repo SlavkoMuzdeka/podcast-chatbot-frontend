@@ -1,28 +1,18 @@
-import { SECURITY_HEADERS, sanitizeInput } from "@/lib/security";
 import { INAT_NETWORKS_JWT_TOKEN_KEY, API_BASE_URL } from "@/lib/constants";
 
-// Token management
 const getStoredToken = (): string | null => {
   if (typeof window === "undefined") return null;
-  return sessionStorage.getItem(INAT_NETWORKS_JWT_TOKEN_KEY);
+  return localStorage.getItem(INAT_NETWORKS_JWT_TOKEN_KEY);
 };
 
 const setStoredToken = (token: string): void => {
   if (typeof window === "undefined") return;
-  sessionStorage.setItem(INAT_NETWORKS_JWT_TOKEN_KEY, token);
+  localStorage.setItem(INAT_NETWORKS_JWT_TOKEN_KEY, token);
 };
 
 const removeStoredToken = (): void => {
   if (typeof window === "undefined") return;
-  sessionStorage.removeItem(INAT_NETWORKS_JWT_TOKEN_KEY);
-};
-
-const isTokenValid = (): boolean => {
-  if (typeof window === "undefined") return false;
-
-  const token = getStoredToken();
-  if (!token) return false;
-  return true;
+  localStorage.removeItem(INAT_NETWORKS_JWT_TOKEN_KEY);
 };
 
 export class APIError extends Error {
@@ -46,53 +36,26 @@ export class AuthenticationError extends Error {
   }
 }
 
-// Secure API fetch with comprehensive error handling
 export const apiFetch = async (
   endpoint: string,
   options: RequestInit = {}
 ): Promise<Response> => {
   const token = getStoredToken();
   const headers: Record<string, string> = {
-    ...SECURITY_HEADERS,
+    "Content-Type": "application/json",
     ...((options.headers as Record<string, string>) || {}),
   };
 
-  // Add authentication header if token exists
   if (token && !endpoint.includes("/auth/login")) {
     headers["Authorization"] = `Bearer ${token}`;
   }
 
-  // Sanitize request body if it's JSON
-  let body = options.body;
-  if (body && typeof body === "string") {
-    try {
-      const parsed = JSON.parse(body);
-      const sanitized = sanitizeRequestData(parsed);
-      body = JSON.stringify(sanitized);
-    } catch {
-      // If not JSON, treat as string and sanitize
-      body = sanitizeInput(body);
-    }
-  }
-
-  const requestOptions: RequestInit = {
-    ...options,
-    headers,
-    body,
-  };
-
   try {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
-
     const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-      ...requestOptions,
-      signal: controller.signal,
+      ...options,
+      headers,
     });
 
-    clearTimeout(timeoutId);
-
-    // Handle authentication errors
     if (response.status === 401) {
       removeStoredToken();
       throw new AuthenticationError(
@@ -100,14 +63,12 @@ export const apiFetch = async (
       );
     }
 
-    // Handle other HTTP errors
     if (!response.ok) {
       let errorMessage = `Request failed with status ${response.status}`;
       try {
         const errorData = await response.json();
         errorMessage = errorData.error || errorData.message || errorMessage;
       } catch {
-        // If response is not JSON, use status text
         errorMessage = response.statusText || errorMessage;
       }
 
@@ -135,28 +96,6 @@ export const apiFetch = async (
   }
 };
 
-// Sanitize request data recursively
-const sanitizeRequestData = (data: any): any => {
-  if (typeof data === "string") {
-    return sanitizeInput(data);
-  }
-
-  if (Array.isArray(data)) {
-    return data.map(sanitizeRequestData);
-  }
-
-  if (data && typeof data === "object") {
-    const sanitized: any = {};
-    for (const [key, value] of Object.entries(data)) {
-      sanitized[sanitizeInput(key)] = sanitizeRequestData(value);
-    }
-    return sanitized;
-  }
-
-  return data;
-};
-
-// Secure API methods
 export const apiGet = async (endpoint: string): Promise<any> => {
   const response = await apiFetch(endpoint, { method: "GET" });
   return response.json();
@@ -183,4 +122,4 @@ export const apiDelete = async (endpoint: string): Promise<any> => {
   return response.json();
 };
 
-export { setStoredToken, removeStoredToken, isTokenValid };
+export { setStoredToken, removeStoredToken };

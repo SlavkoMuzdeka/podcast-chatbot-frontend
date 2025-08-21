@@ -1,12 +1,11 @@
 "use client";
 
-import { AuthState } from "@/lib/models";
+import { AuthState } from "@/utils/models";
+import { useState, useCallback } from "react";
 import { sanitizeInput } from "@/lib/security";
-import { useState, useEffect, useCallback } from "react";
 import {
   apiPost,
   APIError,
-  isTokenValid,
   setStoredToken,
   removeStoredToken,
   AuthenticationError,
@@ -16,51 +15,8 @@ export function useAuth() {
   const [authState, setAuthState] = useState<AuthState>({
     user: null,
     isAuthenticated: false,
-    isLoading: true,
     error: null,
   });
-
-  // Check authentication status on mount
-  useEffect(() => {
-    checkAuthStatus();
-  }, []);
-
-  const checkAuthStatus = useCallback(async () => {
-    try {
-      if (!isTokenValid()) {
-        setAuthState((prev) => ({ ...prev, isLoading: false }));
-        return;
-      }
-
-      // Verify token with server
-      const response = await apiPost("/api/auth/verify", {});
-
-      if (response.success && response.user) {
-        setAuthState({
-          user: response.user,
-          isAuthenticated: true,
-          isLoading: false,
-          error: null,
-        });
-      } else {
-        removeStoredToken();
-        setAuthState({
-          user: null,
-          isAuthenticated: false,
-          isLoading: false,
-          error: null,
-        });
-      }
-    } catch (error) {
-      removeStoredToken();
-      setAuthState({
-        user: null,
-        isAuthenticated: false,
-        isLoading: false,
-        error: null,
-      });
-    }
-  }, []);
 
   const login = async (
     username: string,
@@ -88,12 +44,11 @@ export function useAuth() {
         password: sanitizedPassword,
       });
 
-      if (response.success && response.token && response.user) {
-        setStoredToken(response.token);
+      if (response.success) {
+        setStoredToken(response.data.tokens.access_token);
         setAuthState({
-          user: response.user,
+          user: response.data.user,
           isAuthenticated: true,
-          isLoading: false,
           error: null,
         });
 
@@ -136,7 +91,6 @@ export function useAuth() {
       setAuthState({
         user: null,
         isAuthenticated: false,
-        isLoading: false,
         error: null,
       });
     }
@@ -151,6 +105,5 @@ export function useAuth() {
     login,
     logout,
     clearError,
-    checkAuthStatus,
   };
 }

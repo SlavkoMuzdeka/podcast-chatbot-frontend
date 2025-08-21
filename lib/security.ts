@@ -6,10 +6,6 @@ export const SECURITY_CONFIG = {
   PASSWORD_REQUIRE_SPECIAL: true,
 } as const;
 
-export const SECURITY_HEADERS = {
-  "Content-Type": "application/json",
-} as const;
-
 export const sanitizeInput = (input: string): string => {
   if (typeof input !== "string") return "";
 
