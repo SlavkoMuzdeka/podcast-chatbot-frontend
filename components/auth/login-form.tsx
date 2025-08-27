@@ -15,6 +15,7 @@ import {
   User,
   EyeOff,
   Shield,
+  Loader2,
   Sparkles,
   ArrowRight,
   AlertCircle,
@@ -27,9 +28,15 @@ interface LoginFormProps {
   ) => Promise<{ success: boolean; error?: string }>;
   error: string | null;
   onClearError: () => void;
+  isLoading?: boolean;
 }
 
-export function LoginForm({ onLogin, error, onClearError }: LoginFormProps) {
+export function LoginForm({
+  onLogin,
+  error,
+  onClearError,
+  isLoading = false,
+}: LoginFormProps) {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -154,6 +161,7 @@ export function LoginForm({ onLogin, error, onClearError }: LoginFormProps) {
                       className="pl-12 h-12 border-2 border-slate-200 dark:border-slate-700 focus:border-corporate-500 dark:focus:border-corporate-400 rounded-xl bg-slate-50 dark:bg-slate-800/50 text-slate-900 dark:text-white placeholder:text-slate-400 transition-all duration-200 focus:shadow-lg focus:shadow-corporate-500/10"
                       required
                       autoComplete="username"
+                      disabled={isLoading}
                     />
                   </div>
                 </motion.div>
@@ -182,6 +190,7 @@ export function LoginForm({ onLogin, error, onClearError }: LoginFormProps) {
                       className="pl-12 pr-12 h-12 border-2 border-slate-200 dark:border-slate-700 focus:border-corporate-500 dark:focus:border-corporate-400 rounded-xl bg-slate-50 dark:bg-slate-800/50 text-slate-900 dark:text-white placeholder:text-slate-400 transition-all duration-200 focus:shadow-lg focus:shadow-corporate-500/10"
                       required
                       autoComplete="current-password"
+                      disabled={isLoading}
                     />
                     <div className="absolute right-4 top-1/2 transform -translate-y-1/2">
                       <motion.button
@@ -190,6 +199,7 @@ export function LoginForm({ onLogin, error, onClearError }: LoginFormProps) {
                         className="flex items-center justify-center w-5 h-5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors duration-200"
                         whileHover={{ scale: 1.1 }}
                         whileTap={{ scale: 0.9 }}
+                        disabled={isLoading}
                       >
                         {showPassword ? (
                           <EyeOff className="w-5 h-5" />
@@ -229,11 +239,20 @@ export function LoginForm({ onLogin, error, onClearError }: LoginFormProps) {
                   <Button
                     type="submit"
                     className="w-full h-12 bg-gradient-to-r from-corporate-600 via-corporate-700 to-corporate-800 hover:from-corporate-700 hover:via-corporate-800 hover:to-corporate-900 text-white font-semibold shadow-xl hover:shadow-2xl hover:shadow-corporate-500/25 transition-all duration-300 rounded-xl border-0 group"
-                    disabled={!isFormValid}
+                    disabled={!isFormValid || isLoading}
                   >
                     <div className="flex items-center justify-center space-x-2 group-hover:space-x-3 transition-all duration-200">
-                      <span>Sign In</span>
-                      <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform duration-200" />
+                      {isLoading ? (
+                        <>
+                          <Loader2 className="w-5 h-5 animate-spin" />
+                          <span>Signing In...</span>
+                        </>
+                      ) : (
+                        <>
+                          <span>Sign In</span>
+                          <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform duration-200" />
+                        </>
+                      )}
                     </div>
                   </Button>
                 </motion.div>

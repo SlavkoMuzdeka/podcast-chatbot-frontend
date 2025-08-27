@@ -2,12 +2,18 @@ import "./globals.css";
 
 import type React from "react";
 
+import type { Metadata } from "next";
+
 import { Inter } from "next/font/google";
-import { Toaster } from "@/components/ui/toaster";
-import { Footer } from "@/components/layout/footer";
+import { ClientLayout } from "./clientLayout";
 import { ThemeProvider } from "@/components/theme/theme-provider";
 
 const inter = Inter({ subsets: ["latin"] });
+
+export const metadata: Metadata = {
+  title: "Podcast Chatbot - Inat Networks",
+  description: "AI-powered podcast analysis and chat interface",
+};
 
 export default function RootLayout({
   children,
@@ -16,11 +22,9 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${inter.className} min-h-screen flex flex-col`}>
+      <body className={inter.className}>
         <ThemeProvider>
-          <div className="flex-1">{children}</div>
-          <Footer />
-          <Toaster />
+          <ClientLayout>{children}</ClientLayout>
         </ThemeProvider>
       </body>
     </html>
