@@ -1,125 +1,145 @@
-import { INAT_NETWORKS_JWT_TOKEN_KEY, API_BASE_URL } from "@/lib/constants";
+import { CreateEpisode, CreateExpert } from "./models";
 
-const getStoredToken = (): string | null => {
-  if (typeof window === "undefined") return null;
-  return localStorage.getItem(INAT_NETWORKS_JWT_TOKEN_KEY);
-};
+const LOCAL_STORAGE_PREFIX = "inat-networks-chatbot-";
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
-const setStoredToken = (token: string): void => {
-  if (typeof window === "undefined") return;
-  localStorage.setItem(INAT_NETWORKS_JWT_TOKEN_KEY, token);
-};
-
-const removeStoredToken = (): void => {
-  if (typeof window === "undefined") return;
-  localStorage.removeItem(INAT_NETWORKS_JWT_TOKEN_KEY);
-};
-
-export class APIError extends Error {
-  constructor(message: string, public status: number, public code?: string) {
-    super(message);
-    this.name = "APIError";
-  }
+interface ApiResponse {
+  success: boolean;
+  data?: any;
+  error?: string;
 }
 
-export class NetworkError extends Error {
-  constructor(message = "Network connection failed") {
-    super(message);
-    this.name = "NetworkError";
-  }
+interface RequestOptions {
+  method?: "GET" | "POST" | "PUT" | "DELETE" | "PATCH";
+  body?: any;
+  headers?: Record<string, string>;
+  requireAuth?: boolean;
 }
 
-export class AuthenticationError extends Error {
-  constructor(message = "Authentication failed") {
-    super(message);
-    this.name = "AuthenticationError";
-  }
-}
+// Auth endpoints
+const LOGIN_URL = "/api/auth/login";
 
-export const apiFetch = async (
+// Expert endpoints
+const GET_EXPERTS_URL = "/api/experts/";
+const CREATE_EXPERT_URL = "/api/experts/";
+const DELETE_EXPERT_URL = (expertId: string) => `/api/experts/${expertId}`;
+
+// Episode endpoints
+const GET_EPISODES_URL = (id: string) => `/api/experts/${id}/episodes`;
+const CREATE_EPISODE_URL = (expertId: string) =>
+  `/api/experts/${expertId}/episodes`;
+const UPDATE_EPISODE_URL = (expertId: string, episodeId: string) =>
+  `/api/experts/${expertId}/episodes/${episodeId}`;
+const DELETE_EPISODE_URL = (expertId: string, episodeId: string) =>
+  `/api/experts/${expertId}/episodes/${episodeId}`;
+
+const getAuthHeaders = (): Record<string, string> => {
+  const token = localStorage.getItem(`${LOCAL_STORAGE_PREFIX}access_token`);
+  return token ? { Authorization: `Bearer ${token}` } : {};
+};
+
+const makeRequest = async (
   endpoint: string,
-  options: RequestInit = {}
-): Promise<Response> => {
-  const token = getStoredToken();
-  const headers: Record<string, string> = {
-    "Content-Type": "application/json",
-    ...((options.headers as Record<string, string>) || {}),
-  };
-
-  if (token && !endpoint.includes("/auth/login")) {
-    headers["Authorization"] = `Bearer ${token}`;
-  }
+  options: RequestOptions = {}
+): Promise<ApiResponse> => {
+  const { method = "GET", body, headers = {}, requireAuth = true } = options;
 
   try {
-    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-      ...options,
-      headers,
-    });
+    const requestHeaders: Record<string, string> = {
+      "Content-Type": "application/json",
+      ...headers,
+      ...(requireAuth ? getAuthHeaders() : {}),
+    };
 
-    if (response.status === 401) {
-      removeStoredToken();
-      throw new AuthenticationError(
-        "Authentication failed. Please log in again."
-      );
+    const config: RequestInit = {
+      method,
+      headers: requestHeaders,
+    };
+
+    if (body && method !== "GET") {
+      config.body = JSON.stringify(body);
     }
+
+    const response = await fetch(`${API_BASE_URL}${endpoint}`, config);
+    const data = await response.json();
 
     if (!response.ok) {
-      let errorMessage = `Request failed with status ${response.status}`;
-      try {
-        const errorData = await response.json();
-        errorMessage = errorData.error || errorData.message || errorMessage;
-      } catch {
-        errorMessage = response.statusText || errorMessage;
-      }
-
-      throw new APIError(errorMessage, response.status);
+      return {
+        success: data.success,
+        error: data.error || `HTTP ${response.status}`,
+      };
     }
 
-    return response;
+    return {
+      success: data.success,
+      data: data.data,
+    };
   } catch (error) {
-    if (error instanceof APIError || error instanceof AuthenticationError) {
-      throw error;
-    }
-
-    if (error instanceof Error) {
-      if (error.name === "AbortError") {
-        throw new NetworkError("Request timeout. Please try again.");
-      }
-      if (error.message.includes("fetch")) {
-        throw new NetworkError(
-          "Network connection failed. Please check your internet connection."
-        );
-      }
-    }
-
-    throw new NetworkError("An unexpected error occurred. Please try again.");
+    console.error("API Request Error:", error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Network error",
+    };
   }
 };
 
-export const apiGet = async (endpoint: string): Promise<any> => {
-  const response = await apiFetch(endpoint, { method: "GET" });
-  return response.json();
-};
-
-export const apiPost = async (endpoint: string, data: any): Promise<any> => {
-  const response = await apiFetch(endpoint, {
+// Auth endpoints
+export const apiLogin = async (username: string, password: string) => {
+  return await makeRequest(LOGIN_URL, {
     method: "POST",
-    body: JSON.stringify(data),
+    body: { username, password },
+    requireAuth: false,
   });
-  return response.json();
 };
 
-export const apiPut = async (endpoint: string, data: any): Promise<any> => {
-  const response = await apiFetch(endpoint, {
+// Expert endpoints
+export const apiCreateExpert = async (data: CreateExpert) => {
+  return await makeRequest(CREATE_EXPERT_URL, {
+    method: "POST",
+    body: data,
+  });
+};
+
+export const apiGetExperts = async () => {
+  return await makeRequest(GET_EXPERTS_URL);
+};
+
+export const apiDeleteExpert = async (expertId: string) => {
+  return await makeRequest(DELETE_EXPERT_URL(expertId), {
+    method: "DELETE",
+  });
+};
+
+// Episode endpoints
+export const apiGetEpisodes = async (expertId: string) => {
+  return await makeRequest(GET_EPISODES_URL(expertId));
+};
+
+export const apiUpdateEpisode = async (
+  expertId: string,
+  episodeId: string,
+  data: CreateEpisode
+) => {
+  return await makeRequest(UPDATE_EPISODE_URL(expertId, episodeId), {
     method: "PUT",
-    body: JSON.stringify(data),
+    body: data,
   });
-  return response.json();
 };
 
-export const apiDelete = async (endpoint: string): Promise<any> => {
-  const response = await apiFetch(endpoint, { method: "DELETE" });
-  return response.json();
+export const apiDeleteEpisode = async (expertId: string, episodeId: string) => {
+  return await makeRequest(DELETE_EPISODE_URL(expertId, episodeId), {
+    method: "DELETE",
+  });
 };
 
-export { setStoredToken, removeStoredToken };
+export const apiCreateEpisode = async (
+  expertId: string,
+  data: CreateEpisode
+) => {
+  return await makeRequest(CREATE_EPISODE_URL(expertId), {
+    method: "POST",
+    body: data,
+  });
+};
+
+export type { ApiResponse };

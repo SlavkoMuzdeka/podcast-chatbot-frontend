@@ -1,6 +1,6 @@
 import type React from "react";
 import { User2 } from "lucide-react";
-
+// TODO: Delete this file
 /**
  * @description Type definition for a bot configuration
  */

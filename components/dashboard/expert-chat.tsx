@@ -10,7 +10,6 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, Send, Bot, User, Loader2, Database } from "lucide-react";
-import { apiFetch } from "@/utils/api";
 
 interface Expert {
   id: string;
@@ -77,61 +76,56 @@ export function ExpertChat({ sessionId, expert, onBack }: ExpertChatProps) {
   };
 
   const sendMessage = async () => {
-    if (!inputMessage.trim() || isLoading) return;
-
-    const userMessage: Message = {
-      id: Date.now().toString(),
-      content: inputMessage.trim(),
-      role: "user",
-      timestamp: new Date().toISOString(),
-    };
-
-    setMessages((prev) => [...prev, userMessage]);
-    setInputMessage("");
-    setIsLoading(true);
-
-    try {
-      const response = await apiFetch(`/api/experts/${expert.id}/chat`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          message: userMessage.content,
-          session_id: sessionId,
-        }),
-      });
-
-      const data = await response.json();
-
-      if (data.success) {
-        const assistantMessage: Message = {
-          id: (Date.now() + 1).toString(),
-          content: data.response,
-          role: "assistant",
-          timestamp: new Date().toISOString(),
-        };
-        setMessages((prev) => [...prev, assistantMessage]);
-      } else {
-        const errorMessage: Message = {
-          id: (Date.now() + 1).toString(),
-          content: "Sorry, I encountered an error. Please try again.",
-          role: "assistant",
-          timestamp: new Date().toISOString(),
-        };
-        setMessages((prev) => [...prev, errorMessage]);
-      }
-    } catch (error) {
-      const errorMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        content: "Network error. Please check your connection and try again.",
-        role: "assistant",
-        timestamp: new Date().toISOString(),
-      };
-      setMessages((prev) => [...prev, errorMessage]);
-    } finally {
-      setIsLoading(false);
-    }
+    // if (!inputMessage.trim() || isLoading) return;
+    // const userMessage: Message = {
+    //   id: Date.now().toString(),
+    //   content: inputMessage.trim(),
+    //   role: "user",
+    //   timestamp: new Date().toISOString(),
+    // };
+    // setMessages((prev) => [...prev, userMessage]);
+    // setInputMessage("");
+    // setIsLoading(true);
+    // try {
+    //   const response = await apiFetch(`/api/experts/${expert.id}/chat`, {
+    //     method: "POST",
+    //     headers: {
+    //       "Content-Type": "application/json",
+    //     },
+    //     body: JSON.stringify({
+    //       message: userMessage.content,
+    //       session_id: sessionId,
+    //     }),
+    //   });
+    //   const data = await response.json();
+    //   if (data.success) {
+    //     const assistantMessage: Message = {
+    //       id: (Date.now() + 1).toString(),
+    //       content: data.response,
+    //       role: "assistant",
+    //       timestamp: new Date().toISOString(),
+    //     };
+    //     setMessages((prev) => [...prev, assistantMessage]);
+    //   } else {
+    //     const errorMessage: Message = {
+    //       id: (Date.now() + 1).toString(),
+    //       content: "Sorry, I encountered an error. Please try again.",
+    //       role: "assistant",
+    //       timestamp: new Date().toISOString(),
+    //     };
+    //     setMessages((prev) => [...prev, errorMessage]);
+    //   }
+    // } catch (error) {
+    //   const errorMessage: Message = {
+    //     id: (Date.now() + 1).toString(),
+    //     content: "Network error. Please check your connection and try again.",
+    //     role: "assistant",
+    //     timestamp: new Date().toISOString(),
+    //   };
+    //   setMessages((prev) => [...prev, errorMessage]);
+    // } finally {
+    //   setIsLoading(false);
+    // }
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {

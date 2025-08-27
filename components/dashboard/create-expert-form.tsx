@@ -2,10 +2,10 @@
 
 import type React from "react";
 
-import type { Episode } from "@/utils/models";
+import type { CreateEpisode } from "@/utils/models";
 
 import { useState } from "react";
-import { apiFetch } from "@/utils/api";
+import { useToast } from "@/hooks/use-toast";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -21,17 +21,21 @@ import {
   Loader2,
   FileText,
   Sparkles,
-  CheckCircle,
   AlertCircle,
 } from "lucide-react";
+import { apiCreateExpert } from "@/utils/api";
 
-export function CreateExpertForm() {
+interface UpdateExpertFormProps {
+  onSuccess: () => void;
+}
+
+export function CreateExpertForm({ onSuccess }: UpdateExpertFormProps) {
+  const { toast } = useToast();
   const [name, setName] = useState("");
   const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
   const [description, setDescription] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [episodes, setEpisodes] = useState<Episode[]>([
+  const [episodes, setEpisodes] = useState<CreateEpisode[]>([
     { title: "", content: "" },
   ]);
 
@@ -47,7 +51,7 @@ export function CreateExpertForm() {
 
   const updateEpisode = (
     index: number,
-    field: keyof Episode,
+    field: keyof CreateEpisode,
     value: string
   ) => {
     const updatedEpisodes = episodes.map((episode, i) =>
@@ -60,7 +64,6 @@ export function CreateExpertForm() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
-    setSuccess("");
 
     if (!name.trim()) {
       setError("Expert name is required");
@@ -84,21 +87,26 @@ export function CreateExpertForm() {
     setIsSubmitting(true);
 
     try {
-      const response = await apiFetch("/api/experts/", {
-        method: "POST",
-        body: JSON.stringify({
-          name: name.trim(),
-          description: description.trim(),
-          episodes: validEpisodes,
-        }),
+      const resp = await apiCreateExpert({
+        name: name.trim(),
+        description: description.trim(),
+        episodes: validEpisodes,
       });
 
-      const data = await response.json();
-
-      if (data.success) {
-        setSuccess("Expert created successfully!");
+      if (resp.success) {
+        resetForm();
+        toast({
+          title: "Expert Created Successfully!",
+          description: `${name} has been created and is ready to chat.`,
+          duration: 5000,
+          variant: "success",
+        });
+        window.scrollTo({ top: 0, behavior: "smooth" });
+        setTimeout(() => {
+          onSuccess();
+        }, 1500);
       } else {
-        setError(data.error || "Failed to create expert");
+        setError(resp.error || "Failed to create expert");
       }
     } catch (err) {
       setError("Network error. Please try again.");
@@ -112,7 +120,6 @@ export function CreateExpertForm() {
     setDescription("");
     setEpisodes([{ title: "", content: "" }]);
     setError("");
-    setSuccess("");
   };
 
   const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -383,25 +390,6 @@ export function CreateExpertForm() {
                         <AlertCircle className="h-5 w-5 text-red-600 dark:text-red-400" />
                         <AlertDescription className="text-red-700 dark:text-red-300 font-medium ml-2">
                           {error}
-                        </AlertDescription>
-                      </Alert>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-
-                {/* Success Alert */}
-                <AnimatePresence>
-                  {success && (
-                    <motion.div
-                      initial={{ opacity: 0, y: -10, height: 0 }}
-                      animate={{ opacity: 1, y: 0, height: "auto" }}
-                      exit={{ opacity: 0, y: -10, height: 0 }}
-                      transition={{ duration: 0.3 }}
-                    >
-                      <Alert className="border-2 border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950/50 rounded-xl">
-                        <CheckCircle className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
-                        <AlertDescription className="text-emerald-700 dark:text-emerald-300 font-medium ml-2">
-                          {success}
                         </AlertDescription>
                       </Alert>
                     </motion.div>

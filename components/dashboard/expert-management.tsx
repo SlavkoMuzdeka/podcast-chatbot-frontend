@@ -19,7 +19,6 @@ import {
   Database,
   Zap,
 } from "lucide-react";
-import { apiFetch } from "@/utils/api";
 
 interface Expert {
   id: string;
