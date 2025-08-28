@@ -1,71 +1,59 @@
 "use client";
 
+import { useState } from "react";
+import { User } from "@/utils/models";
 import { apiLogin } from "@/utils/api";
-import { AuthState } from "@/utils/models";
-import { useState, useCallback } from "react";
+import { useRouter } from "next/navigation";
 
 const LOCAL_STORAGE_PREFIX = "inat-networks-chatbot-";
 
 export function useAuth() {
-  const [authState, setAuthState] = useState<AuthState>({
-    user: null,
-    isAuthenticated: false,
-    error: null,
-  });
+  const router = useRouter();
+  const [user, setUser] = useState<User | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
 
   const clearAuthData = () => {
     localStorage.removeItem(LOCAL_STORAGE_PREFIX + "user");
     localStorage.removeItem(LOCAL_STORAGE_PREFIX + "access_token");
-    setAuthState({
-      user: null,
-      isAuthenticated: false,
-      error: null,
-    });
+    setUser(null);
   };
 
-  const login = async (
-    username: string,
-    password: string
-  ): Promise<{ success: boolean; error?: string }> => {
-    setAuthState((prev) => ({ ...prev, isLoading: true, error: null }));
+  const login = async (username: string, password: string) => {
     try {
+      setIsLoading(true);
+      setError(null);
+
+      if (!username.trim() || !password.trim()) {
+        return;
+      }
+
       const resp = await apiLogin(username, password);
 
-      if (resp.success && resp.data?.user && resp.data?.tokens) {
-        const user = resp.data.user;
+      if (resp.success) {
+        const tempUser = resp.data.user;
         const tokens = resp.data.tokens;
 
-        setAuthState({
-          user: resp.data.user,
-          isAuthenticated: true,
-          error: null,
-        });
+        setUser(tempUser);
 
         localStorage.setItem(
           LOCAL_STORAGE_PREFIX + "user",
-          JSON.stringify(user)
+          JSON.stringify(tempUser)
         );
         localStorage.setItem(
           LOCAL_STORAGE_PREFIX + "access_token",
           tokens.access_token
         );
-        return { success: resp.success };
+
+        router.push("/dashboard");
       } else {
-        setAuthState((prev) => ({
-          ...prev,
-          isLoading: false,
-          error: resp.error || "Login failed",
-        }));
-        return { success: resp.success, error: resp.error };
+        setError(resp.error || "Login failed");
       }
     } catch (error) {
       console.error("Login error:", error);
-      setAuthState((prev) => ({
-        ...prev,
-        isLoading: false,
-        error: "Login failed",
-      }));
-      return { success: false, error: "Login failed" };
+      setError("An unexpected error occurred");
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -73,14 +61,11 @@ export function useAuth() {
     clearAuthData();
   };
 
-  const clearError = useCallback(() => {
-    setAuthState((prev) => ({ ...prev, error: null }));
-  }, []);
-
   return {
-    ...authState,
+    user,
+    error,
     login,
     logout,
-    clearError,
+    isLoading,
   };
 }

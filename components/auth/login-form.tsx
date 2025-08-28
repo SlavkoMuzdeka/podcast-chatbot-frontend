@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from "framer-motion";
+import { useAuth } from "@/components/auth/hooks/useAuth";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import {
@@ -21,62 +22,22 @@ import {
   AlertCircle,
 } from "lucide-react";
 
-interface LoginFormProps {
-  onLogin: (
-    username: string,
-    password: string
-  ) => Promise<{ success: boolean; error?: string }>;
-  error: string | null;
-  onClearError: () => void;
-  isLoading?: boolean;
-}
-
-export function LoginForm({
-  onLogin,
-  error,
-  onClearError,
-  isLoading = false,
-}: LoginFormProps) {
+export function LoginForm() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
 
+  const { login, error, isLoading } = useAuth();
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    onClearError();
-
-    if (!username.trim() || !password.trim()) {
-      return;
-    }
-
-    await onLogin(username.trim(), password);
-  };
-
-  const handleUsernameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setUsername(e.target.value);
-    if (error) {
-      onClearError();
-    }
-  };
-
-  const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setPassword(e.target.value);
-    if (error) {
-      onClearError();
-    }
+    await login(username.trim(), password);
   };
 
   const isFormValid = username.trim().length > 0 && password.trim().length > 0;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100 dark:from-slate-950 dark:via-slate-900 dark:to-slate-800 flex items-center justify-center p-4 relative overflow-hidden">
-      {/* Background Elements */}
-      <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute -top-40 -right-40 w-80 h-80 bg-corporate-100 dark:bg-corporate-900/20 rounded-full mix-blend-multiply filter blur-3xl opacity-70 animate-blob"></div>
-        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-corporate-200 dark:bg-corporate-800/20 rounded-full mix-blend-multiply filter blur-3xl opacity-70 animate-blob animation-delay-2000"></div>
-        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-80 h-80 bg-corporate-50 dark:bg-corporate-700/10 rounded-full mix-blend-multiply filter blur-3xl opacity-50 animate-blob animation-delay-4000"></div>
-      </div>
-
       <motion.div
         className="w-full max-w-md relative z-10"
         initial={{ opacity: 0, y: 20 }}
@@ -157,7 +118,7 @@ export function LoginForm({
                       type="text"
                       placeholder="Enter your username"
                       value={username}
-                      onChange={handleUsernameChange}
+                      onChange={(e) => setUsername(e.target.value)}
                       className="pl-12 h-12 border-2 border-slate-200 dark:border-slate-700 focus:border-corporate-500 dark:focus:border-corporate-400 rounded-xl bg-slate-50 dark:bg-slate-800/50 text-slate-900 dark:text-white placeholder:text-slate-400 transition-all duration-200 focus:shadow-lg focus:shadow-corporate-500/10"
                       required
                       autoComplete="username"
@@ -186,7 +147,7 @@ export function LoginForm({
                       type={showPassword ? "text" : "password"}
                       placeholder="Enter your password"
                       value={password}
-                      onChange={handlePasswordChange}
+                      onChange={(e) => setPassword(e.target.value)}
                       className="pl-12 pr-12 h-12 border-2 border-slate-200 dark:border-slate-700 focus:border-corporate-500 dark:focus:border-corporate-400 rounded-xl bg-slate-50 dark:bg-slate-800/50 text-slate-900 dark:text-white placeholder:text-slate-400 transition-all duration-200 focus:shadow-lg focus:shadow-corporate-500/10"
                       required
                       autoComplete="current-password"
