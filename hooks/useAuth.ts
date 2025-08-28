@@ -53,7 +53,9 @@ export function useAuth() {
       console.error("Login error:", error);
       setError("An unexpected error occurred");
     } finally {
-      setIsLoading(false);
+      setTimeout(() => {
+        setIsLoading(false);
+      }, 300);
     }
   };
 

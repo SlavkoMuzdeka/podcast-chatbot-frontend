@@ -3,6 +3,7 @@
 import type React from "react";
 
 import { usePathname } from "next/navigation";
+import { Toaster } from "@/components/ui/toaster";
 import { Footer } from "@/components/layout/footer";
 
 export function ClientLayout({ children }: { children: React.ReactNode }) {
@@ -13,6 +14,7 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
     <>
       {children}
       {!isLoginPage && <Footer />}
+      <Toaster />
     </>
   );
 }
