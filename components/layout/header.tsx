@@ -1,27 +1,28 @@
 "use client";
 
 import type { User as UserType } from "@/utils/models";
+
 import { useState } from "react";
+import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
+import { ThemeToggle } from "@/components/theme/theme-toggle";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   DropdownMenu,
-  DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
-import { ThemeToggle } from "@/components/theme/theme-toggle";
 import {
-  LogOut,
   User,
-  Shield,
-  ChevronDown,
-  Sparkles,
   Brain,
+  Shield,
+  LogOut,
+  Sparkles,
+  ChevronDown,
 } from "lucide-react";
-import { motion } from "framer-motion";
 
 interface HeaderProps {
   user: UserType;
@@ -30,22 +31,6 @@ interface HeaderProps {
 
 export function Header({ user, onLogout }: HeaderProps) {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-
-  const getUserInitials = (user: UserType): string => {
-    if (user.full_name) {
-      return user.full_name
-        .split(" ")
-        .map((name) => name.charAt(0))
-        .join("")
-        .toUpperCase()
-        .slice(0, 2);
-    }
-    return user.username.charAt(0).toUpperCase();
-  };
-
-  const getUserDisplayName = (user: UserType): string => {
-    return user.full_name || user.username;
-  };
 
   const handleLogout = () => {
     setIsDropdownOpen(false);
@@ -101,20 +86,11 @@ export function Header({ user, onLogout }: HeaderProps) {
             {/* User Info - Desktop */}
             <div className="hidden lg:flex flex-col items-end mr-3">
               <span className="text-sm font-semibold bg-gradient-to-r from-slate-900 to-slate-700 dark:from-white dark:to-slate-300 bg-clip-text text-transparent">
-                {getUserDisplayName(user)}
+                {user.username || "Guest"}
               </span>
               <div className="flex items-center gap-1.5 text-xs text-slate-600 dark:text-slate-400">
-                {user.role === "admin" ? (
-                  <>
-                    <Shield className="w-3 h-3 text-corporate-600" />
-                    <span className="font-medium">Administrator</span>
-                  </>
-                ) : (
-                  <>
-                    <User className="w-3 h-3 text-emerald-600" />
-                    <span className="font-medium">User</span>
-                  </>
-                )}
+                <User className="w-3 h-3 text-emerald-600" />
+                <span className="font-medium">User</span>
               </div>
             </div>
 
@@ -134,7 +110,7 @@ export function Header({ user, onLogout }: HeaderProps) {
                   >
                     <Avatar className="h-9 w-9 ring-2 ring-corporate-200 dark:ring-corporate-700 shadow-lg">
                       <AvatarFallback className="bg-gradient-to-br from-corporate-600 via-corporate-700 to-corporate-800 text-white text-sm font-bold">
-                        {getUserInitials(user)}
+                        {user.username.charAt(0).toUpperCase()}
                       </AvatarFallback>
                     </Avatar>
                     <ChevronDown className="h-4 w-4 text-slate-600 dark:text-slate-400 transition-transform duration-200" />
@@ -150,12 +126,12 @@ export function Header({ user, onLogout }: HeaderProps) {
                   <div className="flex items-center gap-3">
                     <Avatar className="h-12 w-12 ring-2 ring-corporate-200 dark:ring-corporate-700">
                       <AvatarFallback className="bg-gradient-to-br from-corporate-600 via-corporate-700 to-corporate-800 text-white font-bold">
-                        {getUserInitials(user)}
+                        {user.username.charAt(0).toUpperCase()}
                       </AvatarFallback>
                     </Avatar>
                     <div className="flex flex-col space-y-1">
                       <p className="text-sm font-bold bg-gradient-to-r from-slate-900 to-slate-700 dark:from-white dark:to-slate-300 bg-clip-text text-transparent">
-                        {getUserDisplayName(user)}
+                        {user.username}
                       </p>
                       {user.email && (
                         <p className="text-xs text-slate-600 dark:text-slate-400 font-medium">
@@ -163,21 +139,10 @@ export function Header({ user, onLogout }: HeaderProps) {
                         </p>
                       )}
                       <div className="flex items-center gap-1.5 text-xs">
-                        {user.role === "admin" ? (
-                          <>
-                            <Shield className="w-3 h-3 text-corporate-600" />
-                            <span className="font-medium text-corporate-600 dark:text-corporate-400">
-                              Administrator
-                            </span>
-                          </>
-                        ) : (
-                          <>
-                            <User className="w-3 h-3 text-emerald-600" />
-                            <span className="font-medium text-emerald-600 dark:text-emerald-400">
-                              User
-                            </span>
-                          </>
-                        )}
+                        <User className="w-3 h-3 text-emerald-600" />
+                        <span className="font-medium text-emerald-600 dark:text-emerald-400">
+                          User
+                        </span>
                       </div>
                     </div>
                   </div>

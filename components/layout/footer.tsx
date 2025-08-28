@@ -1,5 +1,7 @@
 "use client";
 
+import React from "react";
+
 import { motion } from "framer-motion";
 import { Brain, Globe, Mail, MapPin } from "lucide-react";
 
@@ -11,51 +13,6 @@ export function Footer() {
       transition={{ duration: 0.6, delay: 0.2 }}
       className="relative mt-auto border-t border-white/10 bg-gradient-to-br from-slate-900/95 via-blue-900/90 to-purple-900/95 backdrop-blur-xl"
     >
-      {/* Animated Background Blobs - Matching Login Page */}
-      <div className="absolute inset-0 overflow-hidden">
-        <motion.div
-          animate={{
-            x: [0, 100, 0],
-            y: [0, -50, 0],
-            scale: [1, 1.2, 1],
-          }}
-          transition={{
-            duration: 20,
-            repeat: Number.POSITIVE_INFINITY,
-            ease: "easeInOut",
-          }}
-          className="absolute -top-10 -left-10 w-40 h-40 bg-gradient-to-r from-blue-500/30 to-cyan-500/30 rounded-full blur-3xl"
-        />
-        <motion.div
-          animate={{
-            x: [0, -80, 0],
-            y: [0, 60, 0],
-            scale: [1, 1.3, 1],
-          }}
-          transition={{
-            duration: 25,
-            repeat: Number.POSITIVE_INFINITY,
-            ease: "easeInOut",
-            delay: 5,
-          }}
-          className="absolute top-1/2 right-10 w-32 h-32 bg-gradient-to-r from-purple-500/25 to-pink-500/25 rounded-full blur-2xl"
-        />
-        <motion.div
-          animate={{
-            x: [0, 60, 0],
-            y: [0, -40, 0],
-            scale: [1, 1.1, 1],
-          }}
-          transition={{
-            duration: 18,
-            repeat: Number.POSITIVE_INFINITY,
-            ease: "easeInOut",
-            delay: 10,
-          }}
-          className="absolute -bottom-8 left-1/3 w-36 h-36 bg-gradient-to-r from-indigo-500/20 to-blue-500/20 rounded-full blur-2xl"
-        />
-      </div>
-
       {/* Gradient Overlay - Matching Login Page */}
       <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent" />
 
@@ -112,24 +69,32 @@ export function Footer() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.5 }}
             >
-              <div className="text-center">
-                <div className="text-lg font-bold bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent">
-                  1000+
+              {[
+                {
+                  value: "1000+",
+                  label: "Experts",
+                  gradient: "from-blue-400 to-cyan-400",
+                },
+                {
+                  value: "50K+",
+                  label: "Chats",
+                  gradient: "from-purple-400 to-pink-400",
+                },
+                {
+                  value: "99.9%",
+                  label: "Uptime",
+                  gradient: "from-green-400 to-emerald-400",
+                },
+              ].map(({ value, label, gradient }) => (
+                <div key={label} className="text-center">
+                  <div
+                    className={`text-lg font-bold bg-gradient-to-r ${gradient} bg-clip-text text-transparent`}
+                  >
+                    {value}
+                  </div>
+                  <div className="text-gray-400 text-xs">{label}</div>
                 </div>
-                <div className="text-gray-400 text-xs">Experts</div>
-              </div>
-              <div className="text-center">
-                <div className="text-lg font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
-                  50K+
-                </div>
-                <div className="text-gray-400 text-xs">Chats</div>
-              </div>
-              <div className="text-center">
-                <div className="text-lg font-bold bg-gradient-to-r from-green-400 to-emerald-400 bg-clip-text text-transparent">
-                  99.9%
-                </div>
-                <div className="text-gray-400 text-xs">Uptime</div>
-              </div>
+              ))}
             </motion.div>
           </motion.div>
 
@@ -236,17 +201,14 @@ export function Footer() {
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.8, delay: 1.0 }}
             >
-              <span className="text-gray-400 text-sm hover:text-gray-300 transition-colors cursor-default">
-                Privacy
-              </span>
-              <div className="h-3 w-px bg-gray-600" />
-              <span className="text-gray-400 text-sm hover:text-gray-300 transition-colors cursor-default">
-                Terms
-              </span>
-              <div className="h-3 w-px bg-gray-600" />
-              <span className="text-gray-400 text-sm hover:text-gray-300 transition-colors cursor-default">
-                Security
-              </span>
+              {["Privacy", "Terms", "Security"].map((label, idx) => (
+                <React.Fragment key={label}>
+                  <span className="text-gray-400 text-sm hover:text-gray-300 transition-colors cursor-default">
+                    {label}
+                  </span>
+                  {idx < 2 && <div className="h-3 w-px bg-gray-600" />}
+                </React.Fragment>
+              ))}
             </motion.div>
           </div>
         </motion.div>
