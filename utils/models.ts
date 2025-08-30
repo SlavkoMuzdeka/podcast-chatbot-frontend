@@ -3,27 +3,17 @@ export interface User {
   username: string;
   email?: string;
   full_name?: string;
-  role: string;
-  is_active: boolean;
-}
-
-export interface AuthState {
-  user: User | null;
-  isAuthenticated: boolean;
-  error: string | null;
-}
-
-export interface Episode {
-  id: string;
-  title: string;
-  content: string;
-  createdAt: string;
-  updatedAt: string;
 }
 
 export interface CreateEpisode {
   title: string;
   content: string;
+}
+
+export interface Episode extends CreateEpisode {
+  id: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface CreateExpert {
@@ -32,12 +22,16 @@ export interface CreateExpert {
   episodes: CreateEpisode[];
 }
 
-export interface Expert {
+export interface Expert extends CreateExpert {
   id: string;
-  name: string;
-  description: string;
-  episodes: Episode[];
   totalEpisodes: number;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface DashboardStats {
+  total_experts: number;
+  total_episodes: number;
+  total_chats: number;
+  recent_activity: number;
 }

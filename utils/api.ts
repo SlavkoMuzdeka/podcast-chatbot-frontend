@@ -141,5 +141,3 @@ export const apiCreateEpisode = async (
     body: data,
   });
 };
-
-export type { ApiResponse };

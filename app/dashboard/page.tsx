@@ -1,10 +1,11 @@
 "use client";
 
+import type { User } from "@/utils/models";
+
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Header } from "@/components/layout/header";
-import { MainDashboard } from "@/components/dashboard/main-dashboard";
-import type { User } from "@/utils/models";
+import { Header } from "@/components/header";
+import { MainDashboard } from "@/components/main-dashboard";
 
 export default function DashboardPage() {
   const router = useRouter();

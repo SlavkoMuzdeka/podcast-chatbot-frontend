@@ -5,8 +5,9 @@ import type { User as UserType } from "@/utils/models";
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { ThemeToggle } from "@/components/theme/theme-toggle";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { User, Brain, LogOut, Sparkles, ChevronDown } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuItem,
@@ -15,14 +16,6 @@ import {
   DropdownMenuContent,
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
-import {
-  User,
-  Brain,
-  Shield,
-  LogOut,
-  Sparkles,
-  ChevronDown,
-} from "lucide-react";
 
 interface HeaderProps {
   user: UserType;

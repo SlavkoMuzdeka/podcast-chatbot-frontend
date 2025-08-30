@@ -4,7 +4,7 @@ import type React from "react";
 
 import { usePathname } from "next/navigation";
 import { Toaster } from "@/components/ui/toaster";
-import { Footer } from "@/components/layout/footer";
+import { Footer } from "@/components/footer";
 
 export function ClientLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
