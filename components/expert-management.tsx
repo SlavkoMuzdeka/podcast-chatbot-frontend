@@ -1,11 +1,11 @@
 "use client";
 
-import type { Expert } from "@/utils/models";
+import type { Expert, ChatSession } from "@/utils/models";
 
 import { ExpertChat } from "./expert-chat";
-import { useState, useEffect } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { useState, useEffect, useRef } from "react";
 import { apiDeleteExpert, apiGetExperts } from "@/utils/api";
 import { DeleteExpertDialog } from "./delete-expert-dialog";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -25,27 +25,25 @@ import {
   MessageSquare,
 } from "lucide-react";
 
-interface ChatSession {
-  sessionId: string;
-  experts: Expert[];
-}
-
 export function ExpertManagement({
   setActiveTab,
 }: {
   setActiveTab: (tab: string) => void;
 }) {
+  const didFetch = useRef(false);
+  const [error, setError] = useState("");
+  const [isLoading, setIsLoading] = useState(true);
   const [experts, setExperts] = useState<Expert[]>([]);
+  const [isStartingChat, setIsStartingChat] = useState(false);
+  const [deleteExpertDialog, setDeleteExpertDialog] = useState(false);
   const [selectedExperts, setSelectedExperts] = useState<Expert[]>([]);
   const [chatSession, setChatSession] = useState<ChatSession | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
   const [isDeletingExpert, setIsDeletingExpert] = useState<boolean>(false);
-  const [isStartingChat, setIsStartingChat] = useState(false);
-  const [error, setError] = useState("");
-  const [deleteExpertDialog, setDeleteExpertDialog] = useState(false);
 
   useEffect(() => {
+    if (didFetch.current) return;
     fetchExperts();
+    didFetch.current = true;
   }, []);
 
   const fetchExperts = async () => {
@@ -82,10 +80,7 @@ export function ExpertManagement({
 
     setIsStartingChat(true);
     try {
-      const sessionId = `session_${Date.now()}`;
-
       setChatSession({
-        sessionId,
         experts: selectedExperts,
       });
       setError("");
@@ -124,11 +119,7 @@ export function ExpertManagement({
 
   if (chatSession) {
     return (
-      <ExpertChat
-        sessionId={chatSession.sessionId}
-        experts={chatSession.experts}
-        onBack={handleBackToExperts}
-      />
+      <ExpertChat experts={chatSession.experts} onBack={handleBackToExperts} />
     );
   }
 
@@ -337,24 +328,6 @@ export function ExpertManagement({
                     <Zap className="w-3 h-3 mr-1" />
                     Ready
                   </Badge>
-
-                  {/* Delete Button */}
-                  {/* <Button
-                    variant="outline"
-                    size="icon"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleDeleteExpert(expert.id);
-                    }}
-                    disabled={isDeleting === expert.id}
-                    className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/20 border-red-200 dark:border-red-800 hover:border-red-300 dark:hover:border-red-700 transition-colors backdrop-blur-sm"
-                  >
-                    {isDeleting === expert.id ? (
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                    ) : (
-                      <Trash2 className="w-4 h-4" />
-                    )}
-                  </Button> */}
                   <DeleteExpertDialog
                     deleteExpertDialog={deleteExpertDialog}
                     setDeleteExpertDialog={setDeleteExpertDialog}

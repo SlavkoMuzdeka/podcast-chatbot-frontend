@@ -2,42 +2,39 @@
 
 import type React from "react";
 
-import { useState, useEffect, useRef } from "react";
+import type { Expert, Message } from "@/utils/models";
+
 import { Button } from "@/components/ui/button";
+import { useState, useEffect, useRef } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { AutoResizeTextarea } from "@/components/ui/auto-resize-textarea";
 import {
-  ArrowLeft,
-  Send,
   Bot,
   User,
-  Loader2,
+  Send,
   Users,
+  Loader2,
   Sparkles,
+  ArrowLeft,
 } from "lucide-react";
-import type { Expert } from "@/utils/models";
-
-interface Message {
-  id: string;
-  role: "user" | "assistant";
-  content: string;
-  expertId?: string;
-  expertName?: string;
-  timestamp: Date;
-  isStreaming?: boolean;
-}
 
 interface ExpertChatProps {
-  sessionId: string;
   experts: Expert[];
   onBack: () => void;
 }
 
-export function ExpertChat({ sessionId, experts, onBack }: ExpertChatProps) {
-  const [messages, setMessages] = useState<Message[]>([]);
+// Chat endpoints
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+const CHAT_WITH_EXPERT_URL = `${API_BASE_URL}/api/experts/chat`;
+const CHAT_WITH_EXPERT_STREAM = `${API_BASE_URL}/api/experts/chat/stream`;
+
+const LOCAL_STORAGE_PREFIX = "inat-networks-chatbot-";
+
+export function ExpertChat({ experts, onBack }: ExpertChatProps) {
   const [input, setInput] = useState("");
+  const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
@@ -77,10 +74,10 @@ export function ExpertChat({ sessionId, experts, onBack }: ExpertChatProps) {
     setMessages((prev) => [...prev, streamingMessage]);
 
     try {
-      const token = localStorage.getItem("token");
+      const token = localStorage.getItem(LOCAL_STORAGE_PREFIX + "access_token");
       abortControllerRef.current = new AbortController();
 
-      const response = await fetch(`/api/experts/chat/stream`, {
+      const response = await fetch(CHAT_WITH_EXPERT_STREAM, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -184,7 +181,7 @@ export function ExpertChat({ sessionId, experts, onBack }: ExpertChatProps) {
       const responses = await Promise.all(
         experts.map(async (expert) => {
           try {
-            const response = await fetch(`/api/experts/chat`, {
+            const response = await fetch(CHAT_WITH_EXPERT_URL, {
               method: "POST",
               headers: {
                 "Content-Type": "application/json",

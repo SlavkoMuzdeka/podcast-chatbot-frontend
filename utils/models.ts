@@ -35,3 +35,17 @@ export interface DashboardStats {
   total_chats: number;
   recent_activity: number;
 }
+
+export interface ChatSession {
+  experts: Expert[];
+}
+
+export interface Message {
+  id: string;
+  role: "user" | "assistant";
+  content: string;
+  expertId?: string;
+  expertName?: string;
+  timestamp: Date;
+  isStreaming?: boolean;
+}
