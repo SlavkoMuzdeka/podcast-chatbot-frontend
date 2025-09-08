@@ -46,4 +46,5 @@ export interface Message {
   expertName?: string;
   timestamp: Date;
   isStreaming?: boolean;
+  isThinking?: boolean;
 }

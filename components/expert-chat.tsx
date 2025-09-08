@@ -169,14 +169,17 @@ export function ExpertChat({ experts, onBack }: ExpertChatProps) {
   };
 
   const handleMultiExpertChat = async (userMessage: Message) => {
-    // Create pending messages for each expert
-    const pendingMessages = experts.map((expert) => ({
-      id: `${Date.now()}-${expert.id}`,
+    const timestamp = Date.now();
+
+    // Create pending messages for each expert with unique IDs
+    const pendingMessages = experts.map((expert, index) => ({
+      id: `${timestamp}-${expert.id}-pending-${index}`,
       role: "assistant" as const,
-      content: "Thinking...",
+      content: "",
       expertId: expert.id,
       expertName: expert.name,
       timestamp: new Date(),
+      isThinking: true,
     }));
 
     setMessages((prev) => [...prev, ...pendingMessages]);
@@ -184,7 +187,7 @@ export function ExpertChat({ experts, onBack }: ExpertChatProps) {
     try {
       // Send requests to each expert
       const responses = await Promise.all(
-        experts.map(async (expert) => {
+        experts.map(async (expert, index) => {
           try {
             const response = await fetch(CHAT_WITH_EXPERT_URL, {
               method: "POST",
@@ -207,11 +210,14 @@ export function ExpertChat({ experts, onBack }: ExpertChatProps) {
             }
 
             return {
-              expertId: data.data.expert_id,
+              expertId: expert.id,
               expertName: expert.name,
               content:
-                data.data.response || "Sorry, I couldn't generate a response.",
+                data.data?.response ||
+                data.response ||
+                "Sorry, I couldn't generate a response.",
               error: false,
+              index,
             };
           } catch (error) {
             console.error(
@@ -227,6 +233,7 @@ export function ExpertChat({ experts, onBack }: ExpertChatProps) {
                   : "Failed to get response"
               }`,
               error: true,
+              index,
             };
           }
         })
@@ -234,12 +241,10 @@ export function ExpertChat({ experts, onBack }: ExpertChatProps) {
 
       // Replace pending messages with actual responses
       setMessages((prev) => {
-        const withoutPending = prev.filter(
-          (m) => !m.expertId || !pendingMessages.some((p) => p.id === m.id)
-        );
+        const withoutPending = prev.filter((m) => !m.isThinking);
         const responseMessages = responses.map(
-          ({ expertId, expertName, content }) => ({
-            id: `${Date.now()}-${expertId}-response`,
+          ({ expertId, expertName, content, index }) => ({
+            id: `${timestamp}-${expertId}-response-${index}`,
             role: "assistant" as const,
             content,
             expertId,
@@ -253,9 +258,7 @@ export function ExpertChat({ experts, onBack }: ExpertChatProps) {
     } catch (error) {
       console.error("Error in multi-expert chat:", error);
       // Remove pending messages and show error
-      setMessages((prev) =>
-        prev.filter((m) => !m.expertId || !m.content.includes("Thinking..."))
-      );
+      setMessages((prev) => prev.filter((m) => !m.isThinking));
     }
   };
 
@@ -394,9 +397,27 @@ export function ExpertChat({ experts, onBack }: ExpertChatProps) {
                       </div>
                     )}
                     <div className="text-sm leading-relaxed whitespace-pre-wrap">
-                      {message.content}
-                      {message.isStreaming && (
-                        <span className="inline-block w-2 h-4 bg-corporate-600 animate-pulse ml-1" />
+                      {message.isThinking ? (
+                        <div className="flex items-center gap-3 py-2">
+                          <div className="flex gap-1">
+                            <div className="h-2 w-2 animate-bounce rounded-full bg-corporate-500 [animation-delay:0ms]"></div>
+                            <div className="h-2 w-2 animate-bounce rounded-full bg-corporate-500 [animation-delay:150ms]"></div>
+                            <div className="h-2 w-2 animate-bounce rounded-full bg-corporate-500 [animation-delay:300ms]"></div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Loader2 className="h-3 w-3 animate-spin text-corporate-500" />
+                            <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">
+                              {message.expertName} is thinking...
+                            </span>
+                          </div>
+                        </div>
+                      ) : (
+                        <>
+                          {message.content}
+                          {message.isStreaming && (
+                            <span className="inline-block w-2 h-4 bg-corporate-600 animate-pulse ml-1" />
+                          )}
+                        </>
                       )}
                     </div>
                   </div>
