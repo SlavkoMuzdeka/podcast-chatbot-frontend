@@ -32,8 +32,6 @@ export interface Expert extends CreateExpert {
 export interface DashboardStats {
   total_experts: number;
   total_episodes: number;
-  total_chats: number;
-  recent_activity: number;
 }
 
 export interface ChatSession {

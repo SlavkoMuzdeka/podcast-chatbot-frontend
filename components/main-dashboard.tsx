@@ -1,33 +1,24 @@
 "use client";
 
+import type { DashboardStats } from "@/utils/models";
+
+import { apiGetStats } from "@/utils/api";
 import { useState, useEffect } from "react";
-import { Button } from "@/components/ui/button";
-import { DashboardStats } from "@/utils/models";
+import { useAuth } from "@/contexts/auth-context";
 import { ExpertManagement } from "./expert-management";
 import { motion, AnimatePresence } from "framer-motion";
 import { CreateExpertForm } from "./create-expert-form";
 import { UpdateExpertForm } from "./update-expert-form";
+import { Bot, Plus, Users, BarChart3 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  Bot,
-  Zap,
-  Plus,
-  Users,
-  Activity,
-  BarChart3,
-  ArrowRight,
-  TrendingUp,
-  MessageSquare,
-} from "lucide-react";
 
 export function MainDashboard() {
+  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState("experts-tab");
   const [stats, setStats] = useState<DashboardStats>({
     total_experts: 0,
     total_episodes: 0,
-    total_chats: 0,
-    recent_activity: 0,
   });
   const [isLoadingStats, setIsLoadingStats] = useState(true);
 
@@ -37,16 +28,21 @@ export function MainDashboard() {
 
   const fetchDashboardStats = async () => {
     try {
-      // const response = await apiFetch("/api/dashboard/stats");
-      // const data = await response.json();
-      // if (data.success) {
-      //   setStats(data.stats);
-      // }
+      setIsLoadingStats(true);
+      const response = await apiGetStats(user?.id || "");
+
+      if (response.success && response.data?.stats) {
+        setStats(response.data.stats);
+      }
     } catch (error) {
-      // Fallback to default stats if API fails
+      console.error("Error fetching dashboard stats:", error);
     } finally {
       setIsLoadingStats(false);
     }
+  };
+
+  const refreshStats = () => {
+    fetchDashboardStats();
   };
 
   const StatCard = ({
@@ -130,7 +126,7 @@ export function MainDashboard() {
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100 dark:from-slate-950 dark:via-slate-900 dark:to-slate-800 relative overflow-hidden">
       <div className="container mx-auto px-6 py-8 relative z-10">
         {/* Stats Grid */}
-        <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-4 mb-12">
+        <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-2 mb-12">
           <StatCard
             title="AI Experts"
             value={stats.total_experts}
@@ -146,22 +142,6 @@ export function MainDashboard() {
             trend="Content analyzed"
             gradient="from-emerald-600 to-emerald-700"
             delay={0.2}
-          />
-          <StatCard
-            title="Conversations"
-            value={stats.total_chats}
-            icon={MessageSquare}
-            trend="Total interactions"
-            gradient="from-purple-600 to-purple-700"
-            delay={0.3}
-          />
-          <StatCard
-            title="Recent Activity"
-            value={stats.recent_activity}
-            icon={Activity}
-            trend="Last 7 days"
-            gradient="from-orange-600 to-orange-700"
-            delay={0.4}
           />
         </div>
 
@@ -198,7 +178,7 @@ export function MainDashboard() {
                       value="update-tab"
                       className="flex items-center gap-3 data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-600 data-[state=active]:to-purple-700 data-[state=active]:text-white data-[state=active]:shadow-xl data-[state=active]:shadow-purple-500/25 rounded-xl transition-all duration-300 font-semibold h-12 text-sm"
                     >
-                      <TrendingUp className="w-4 h-4" />
+                      <BarChart3 className="w-4 h-4" />
                       <span className="hidden sm:inline">Update Expert</span>
                     </TabsTrigger>
                   </TabsList>
@@ -248,7 +228,10 @@ export function MainDashboard() {
                       className="space-y-8"
                     >
                       <CreateExpertForm
-                        onSuccess={() => setActiveTab("experts-tab")}
+                        onSuccess={() => {
+                          setActiveTab("experts-tab");
+                          refreshStats();
+                        }}
                       />
                     </motion.div>
                   </TabsContent>
@@ -267,7 +250,10 @@ export function MainDashboard() {
                       className="space-y-8"
                     >
                       <UpdateExpertForm
-                        onSuccess={() => setActiveTab("experts-tab")}
+                        onSuccess={() => {
+                          setActiveTab("experts-tab");
+                          refreshStats();
+                        }}
                       />
                     </motion.div>
                   </TabsContent>

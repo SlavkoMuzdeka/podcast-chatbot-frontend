@@ -31,16 +31,19 @@ const CHAT_WITH_EXPERT_URL = `${API_BASE_URL}/api/experts/chat`;
 const CHAT_WITH_EXPERT_STREAM = `${API_BASE_URL}/api/experts/chat/stream`;
 
 const LOCAL_STORAGE_PREFIX = "inat-networks-chatbot-";
+const ACCESS_TOKEN = localStorage.getItem(
+  LOCAL_STORAGE_PREFIX + "access_token"
+);
 
 export function ExpertChat({ experts, onBack }: ExpertChatProps) {
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const scrollAreaRef = useRef<HTMLDivElement>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
-    // Add welcome message
     const welcomeMessage: Message = {
       id: "welcome",
       role: "assistant",
@@ -53,13 +56,19 @@ export function ExpertChat({ experts, onBack }: ExpertChatProps) {
   }, [experts]);
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    if (messagesEndRef.current && scrollAreaRef.current) {
+      const scrollContainer = scrollAreaRef.current.querySelector(
+        "[data-radix-scroll-area-viewport]"
+      );
+      if (scrollContainer) {
+        scrollContainer.scrollTop = scrollContainer.scrollHeight;
+      }
+    }
   }, [messages]);
 
   const handleSingleExpertStreaming = async (userMessage: Message) => {
     const expert = experts[0];
 
-    // Create streaming message
     const streamingMessageId = `${Date.now()}-streaming`;
     const streamingMessage: Message = {
       id: streamingMessageId,
@@ -74,14 +83,13 @@ export function ExpertChat({ experts, onBack }: ExpertChatProps) {
     setMessages((prev) => [...prev, streamingMessage]);
 
     try {
-      const token = localStorage.getItem(LOCAL_STORAGE_PREFIX + "access_token");
       abortControllerRef.current = new AbortController();
 
       const response = await fetch(CHAT_WITH_EXPERT_STREAM, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
+          Authorization: `Bearer ${ACCESS_TOKEN}`,
         },
         body: JSON.stringify({
           expertId: expert.id,
@@ -115,7 +123,6 @@ export function ExpertChat({ experts, onBack }: ExpertChatProps) {
           if (line.startsWith("data: ")) {
             const data = line.slice(6);
             if (data === "[DONE]") {
-              // Mark streaming as complete
               setMessages((prev) =>
                 prev.map((msg) =>
                   msg.id === streamingMessageId
@@ -175,8 +182,6 @@ export function ExpertChat({ experts, onBack }: ExpertChatProps) {
     setMessages((prev) => [...prev, ...pendingMessages]);
 
     try {
-      const token = localStorage.getItem("token");
-
       // Send requests to each expert
       const responses = await Promise.all(
         experts.map(async (expert) => {
@@ -185,7 +190,7 @@ export function ExpertChat({ experts, onBack }: ExpertChatProps) {
               method: "POST",
               headers: {
                 "Content-Type": "application/json",
-                Authorization: `Bearer ${token}`,
+                Authorization: `Bearer ${ACCESS_TOKEN}`,
               },
               body: JSON.stringify({
                 expertId: expert.id,
@@ -202,10 +207,10 @@ export function ExpertChat({ experts, onBack }: ExpertChatProps) {
             }
 
             return {
-              expertId: expert.id,
+              expertId: data.data.expert_id,
               expertName: expert.name,
               content:
-                data.response || "Sorry, I couldn't generate a response.",
+                data.data.response || "Sorry, I couldn't generate a response.",
               error: false,
             };
           } catch (error) {
@@ -358,7 +363,7 @@ export function ExpertChat({ experts, onBack }: ExpertChatProps) {
       {/* Messages Container */}
       <div className="flex-1 overflow-hidden">
         <div className="max-w-4xl mx-auto h-full flex flex-col">
-          <ScrollArea className="flex-1 px-4">
+          <ScrollArea className="flex-1 px-4" ref={scrollAreaRef}>
             <div className="py-6 space-y-6">
               {messages.map((message) => (
                 <div
@@ -405,28 +410,6 @@ export function ExpertChat({ experts, onBack }: ExpertChatProps) {
                   )}
                 </div>
               ))}
-
-              {isLoading && experts.length > 1 && (
-                <div className="flex gap-4 justify-start">
-                  <Avatar className="h-8 w-8 mt-1 flex-shrink-0">
-                    <AvatarFallback className="bg-gradient-to-br from-corporate-600 to-corporate-700 text-white">
-                      <Bot className="h-4 w-4" />
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="bg-white dark:bg-slate-800 rounded-2xl rounded-bl-md px-4 py-3 border border-slate-200 dark:border-slate-700 shadow-sm">
-                    <div className="flex items-center gap-2">
-                      <div className="flex gap-1">
-                        <div className="h-2 w-2 animate-bounce rounded-full bg-corporate-400"></div>
-                        <div className="h-2 w-2 animate-bounce rounded-full bg-corporate-400 [animation-delay:0.2s]"></div>
-                        <div className="h-2 w-2 animate-bounce rounded-full bg-corporate-400 [animation-delay:0.4s]"></div>
-                      </div>
-                      <span className="text-xs text-slate-500 dark:text-slate-400">
-                        Processing responses...
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              )}
 
               <div ref={messagesEndRef} />
             </div>

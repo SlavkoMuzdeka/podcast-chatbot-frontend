@@ -33,6 +33,9 @@ const UPDATE_EPISODE_URL = (expertId: string, episodeId: string) =>
 const DELETE_EPISODE_URL = (expertId: string, episodeId: string) =>
   `/api/experts/${expertId}/episodes/${episodeId}`;
 
+// Stats endpoints
+const GET_STATS_URL = (userId: string) => `/api/users/${userId}/stats`;
+
 const getAuthHeaders = (): Record<string, string> => {
   const token = localStorage.getItem(`${LOCAL_STORAGE_PREFIX}access_token`);
   return token ? { Authorization: `Bearer ${token}` } : {};
@@ -140,4 +143,9 @@ export const apiCreateEpisode = async (
     method: "POST",
     body: data,
   });
+};
+
+// Stats endpoints
+export const apiGetStats = async (userId: string) => {
+  return await makeRequest(GET_STATS_URL(userId));
 };
