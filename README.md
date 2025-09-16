@@ -1,133 +1,127 @@
-# Podcaster-Chatbot
+# Podcast Chatbot Frontend
 
-A `Next.js` application that uses `Retrieval Augmented Generation (RAG)` with `Pinecone` vector database to create `AI chatbots` with domain-specific knowledge. This application allows you to chat with multiple `AI` personas that have access to specialized knowledge stored in `Pinecone`.
-
-![Pinecone RAG Chatbot](/public/chatbot_app.png?height=400&width=800)
+A `Next.js` application that provides a modern, responsive interface for interacting with AI-powered podcast experts. This frontend application connects to a backend service to enable chat-based interactions with specialized AI personas.
 
 ## Features
 
-- 🤖 Multiple `AI personas` with different knowledge domains
-- 📚 `Retrieval Augmented Generation (RAG)` using `Pinecone` vector database
-- 🔄 Compare responses from different `AI personas` side-by-side
-- 🔍 Search and filter available bots
-- 💬 Markdown support for rich text responses
-- 📱 Responsive design for all devices
+- 🎙️ Chat with AI podcast experts
+- 🎨 Modern, responsive UI built with Next.js and Tailwind CSS
+- 🔄 Real-time chat interface
+- 📱 Mobile-friendly design
+- 🎭 Multiple expert personas
+- 📝 Markdown support for rich text responses
 
 ## Technologies Used
 
-- **Frontend**: Next.js 15, React, TypeScript, Tailwind CSS
-- **AI**: OpenAI API, AI SDK, LangChain
-- **Vector Database**: Pinecone
-- **Styling**: Tailwind CSS, shadcn/ui components
-- **Markdown**: React Markdown with syntax highlighting
+- **Frontend**: Next.js, React, TypeScript, Tailwind CSS
+- **UI Components**: shadcn/ui
+- **State Management**: React Context
+- **Styling**: Tailwind CSS
+- **Markdown**: React Markdown
 
 ## Prerequisites
 
-- Node.js 18+ and npm/pnpm
-- OpenAI API key
-- Pinecone API key and index
-- Populated Pinecone index with your domain-specific knowledge
+- Node.js 18+
+- pnpm (recommended)
+- Backend API endpoint (see setup instructions below)
 
-## Installation
+## Getting Started
 
 1. Clone the repository:
 
     ```bash
-    git clone https://github.com/SlavkoMuzdeka/Podcaster-Chatbot.git
-    cd Podcaster-Chatbot
+    git clone https://github.com/SlavkoMuzdeka/podcast-chatbot-frontend.git
+    cd podcast-chatbot-frontend
     ```
 
 2. Install dependencies:
 
     ```bash
-    npm install
-    # or
     pnpm install
     ```
 
-3. Create a `.env.local` file in the root directory with the following variables:
-    
-    ```
-    OPENAI_API_KEY=your_openai_api_key
-    PINECONE_API_KEY=your_pinecone_api_key
-    PINECONE_INDEX=your_pinecone_index_name
-    OPENAI_EMBEDDINGS_MODEL=text-embedding-3-large
-    OPENAI_CHAT_MODEL=gpt-4o-mini
+3. Copy the example environment file:
+
+    ```bash
+    cp .env.example .env
     ```
 
-4. Start the development server:
+4. Update the environment variables in `.env` with your configuration.
 
-    ```
-    npm run dev
-    # or
+
+5. Start the development server:
+
+    ```bash
     pnpm dev
     ```
 
-5. Open [http://localhost:3000](http://localhost:3000) in your browser.
+6. Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 ## How It Works
 
 ### Architecture
 
-1. **User Interface**: React components for chat interface and bot selection
-2. **API Routes**: Next.js API routes handle chat requests
-3. **Vector Search**: Pinecone queries for relevant context based on user questions
-4. **AI Response Generation**: OpenAI generates responses using retrieved context
+1. **Frontend**: Built with Next.js and React
+   - Handles user interactions
+   - Manages chat state
+   - Renders UI components
+   - Communicates with the backend API
 
-
-### RAG Process Flow
-
-1. User sends a message
-2. The application converts the message to an embedding using OpenAI
-3. Pinecone searches for similar vectors in the specified namespace
-4. Retrieved context is added to the prompt sent to OpenAI
-5. OpenAI generates a response based on the context and user message
-6. The response is streamed back to the user interface
+2. **Backend Integration**:
+   - Sends user messages to the backend
+   - Receives and displays AI responses
+   - Handles streaming responses
 
 ### Project Structure
 
 ```
 ├── app/                  # Next.js app directory
-│   ├── api/              # API routes
-│   │   └── chat/         # Chat API endpoint
+│   ├── dashboard/        # Main dashboard page
+│   │   └── page.tsx      # Dashboard component
+│   ├── clientLayout.tsx  # Client-side layout
 │   ├── globals.css       # Global styles
-│   ├── layout.tsx        # Root layout
-│   └── page.tsx          # Main page component
+│   └── layout.tsx        # Root layout
 ├── components/           # React components
-│   ├── chat.tsx          # Chat interface
-│   ├── sidebar.tsx       # Bot selection sidebar
-│   └── ui/               # UI components (shadcn/ui)
+│   ├── ui/               # UI components (shadcn/ui)
+│   │   └── ...          # Various UI components
+│   ├── expert-chat.tsx   # Expert chat interface
+│   └── ...              # Other components
+├── contexts/             # React contexts
+│   └── auth-context.tsx  # Authentication context
+├── hooks/                # Custom React hooks
+│   └── use-toast.ts      # Toast notification hook
 ├── lib/                  # Utility functions
-│   ├── bots.ts           # Bot configurations
-│   ├── pinecone.ts       # Pinecone integration
-│   └── utils.ts          # Helper functions
-├── public/               # Static assets
-├── .env.local            # Environment variables (create this)
-├── next.config.js        # Next.js configuration
-├── package.json          # Project dependencies
-├── tailwind.config.js    # Tailwind CSS configuration
-└── tsconfig.json         # TypeScript configuration
+│   ├── api.ts           # API client
+│   └── utils.ts         # Helper functions
+├── public/              # Static assets
+├── .env.example         # Example environment variables
+├── next.config.mjs      # Next.js configuration
+├── package.json         # Project dependencies
+├── tailwind.config.js   # Tailwind CSS configuration
+└── tsconfig.json        # TypeScript configuration
 ```
 
-## Customizing Bots
+## Development
 
-You can customize the available bots by editing the `lib/bots.ts` file. Each bot has the following properties:
+### Available Scripts
 
-- `id`: Unique identifier for the bot
-- `name`: Display name
-- `description`: Short description
-- `namespace`: Pinecone namespace to query for this bot
-- `icon`: Icon component to display
-- `systemPrompt`: System prompt to guide the AI's behavior
+- `pnpm dev`: Start the development server
+- `pnpm build`: Build the application for production
+- `pnpm start`: Start the production server
+- `pnpm lint`: Run ESLint
+- `pnpm format`: Format code with Prettier
 
-## Populating Pinecone
+### Backend Integration
 
-Before using this application, you need to populate your `Pinecone index` with domain-specific knowledge. This typically involves:
+This frontend is designed to work with a backend service that handles the AI processing. The backend should provide the following endpoints:
 
-1. Processing your text data (articles, documentation, etc.)
-2. Generating embeddings for each chunk of text
-3. Storing the embeddings in Pinecone with appropriate metadata
-4. Organizing data into namespaces that correspond to your bots
+- `POST /api/chat`: Handle chat messages
+- `GET /api/experts`: Retrieve available expert personas
 
+## Contributing
 
-You can use my another project that addresses this taks. More info on: [Pinecone embeddings chatbot](https://github.com/SlavkoMuzdeka/Pinecone-embeddings-chatbot)
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
